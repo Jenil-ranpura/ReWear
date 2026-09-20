@@ -37,7 +37,6 @@ function toggleValue(list, value) {
 export default function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [qInput, setQInput] = useState(searchParams.get('q') ?? '');
-  const [locationInput, setLocationInput] = useState(searchParams.get('location') ?? '');
 
   // ── Filters live in the URL (§5.4: shareable/back-button-able views). ──
   // Primitives first: useQuery keys MUST be reference-stable, so the query
@@ -47,7 +46,6 @@ export default function BrowsePage() {
   const sizeParam = searchParams.get('size') ?? '';
   const conditionParam = searchParams.get('condition') ?? '';
   const q = searchParams.get('q') ?? '';
-  const location = searchParams.get('location') ?? '';
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
 
   const query = useMemo(
@@ -56,11 +54,10 @@ export default function BrowsePage() {
       size: toMulti(sizeParam),
       condition: toMulti(conditionParam),
       q,
-      location,
       page,
       pageSize: 12, // 4-col grid × 3 rows
     }),
-    [categoryParam, sizeParam, conditionParam, q, location, page]
+    [categoryParam, sizeParam, conditionParam, q, page]
   );
 
   // Render-local derivations for chip active-states (stable value arrays).
@@ -98,11 +95,6 @@ export default function BrowsePage() {
     setQInput(q);
   }, [q]);
 
-  // Same sync discipline for the location input.
-  useEffect(() => {
-    setLocationInput(location);
-  }, [location]);
-
   // Search-as-you-type: commit q to the URL after the user pauses. Every
   // keystroke resets the timer, so a burst of typing fires ONE fetch with the
   // final value. Equal value → no-op (mount and post-commit runs do nothing).
@@ -113,15 +105,6 @@ export default function BrowsePage() {
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [qInput, q]);
-
-  // Location filters with the same debounce (one mechanism, one constant).
-  useEffect(() => {
-    if (locationInput === location) return undefined;
-    const timer = setTimeout(() => {
-      updateParams({ location: locationInput, page: null });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [locationInput, location]);
 
   // NOTE: takes the chip value explicitly — an onClick handler would receive
   // the DOM event, and String(event) in a filter array is never what we want.
@@ -153,16 +136,6 @@ export default function BrowsePage() {
       </header>
 
       <div className="flex flex-wrap gap-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
-        <FilterGroup label="Location">
-          <input
-            type="search"
-            value={locationInput}
-            onChange={(e) => setLocationInput(e.target.value)}
-            placeholder="City or area (e.g. Mumbai)"
-            aria-label="Filter by location"
-            className="w-56 max-w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:border-brand-600 focus:outline-none"
-          />
-        </FilterGroup>
         <FilterGroup label="Category">
           {CATEGORY_CHIPS.map((c) => (
             <button

@@ -3,7 +3,7 @@
  *
  * - The compound index { status: 1, category: 1 } (§9.1/§23) serves the
  *   dominant browse path (status + optional category). Remaining filters
- *   (size/condition/tags/q/location) apply post-index — fine at MVP scale, and the
+ *   (size/condition/tags/q) apply post-index — fine at MVP scale, and the
  *   index keeps the scan bounded per status/category slice.
  * - Guests/users are FORCED to status=APPROVED (§10: "non-owner/non-admin
  *   callers are implicitly forced to status=APPROVED"); admins may pass
@@ -37,24 +37,6 @@ export async function browseItems(query, viewer) {
   const status = isAdmin && query.status ? query.status : 'APPROVED';
 
   const filter = { status };
-
-  // Location filter (user-requested scope addition): resolve free-text
-  // location to owner ids FIRST (case-insensitive contains on User.location),
-  // then filter items by that id list via a PLAIN ARRAY — the established
-  // sanitizeFilter-safe pattern (plain arrays cast to $in natively; object-form
-  // $in is defanged — see SECURITY NOTE). Regex VALUE (not an operator) passes
-  // sanitizeFilter untouched, same as the q clauses below.
-  // Live from the profile on every query: editing your location instantly
-  // moves your listings in/out of location-filtered browse — zero
-  // denormalization, zero propagation logic to drift.
-  // A location matching nobody keeps the EXPLICIT empty array: deleting the
-  // key here would silently widen the query to all owners.
-  if (query.location) {
-    const owners = await User.find({ location: new RegExp(escapeRegExp(query.location), 'i') })
-      .select('_id')
-      .lean();
-    filter.ownerId = owners.map((o) => o._id);
-  }
 
   // Plain arrays — Mongoose casts them to $in (see SECURITY NOTE above).
   if (query.category?.length) filter.category = query.category;

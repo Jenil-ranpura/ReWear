@@ -221,32 +221,6 @@ describe('BrowsePage — URL-driven filters (§5.4)', () => {
 });
 
 describe('BrowsePage — pagination and empty state', () => {
-  it('commits the location filter to the URL with the same debounce', async () => {
-    responses = { '/items?': [jsonResponse(200, { items: [], total: 0, page: 1, totalPages: 1 })] };
-    renderBrowse();
-
-    await waitFor(() => expect(fetchCalls.length).toBeGreaterThan(0));
-    const before = fetchCalls.length;
-
-    fireEvent.change(screen.getByLabelText(/filter by location/i), {
-      target: { value: 'mumbai' },
-    });
-
-    // Not committed immediately — same silence window as q.
-    expect(fetchCalls.length).toBe(before);
-    act(() => {
-      vi.advanceTimersByTime(299);
-    });
-    expect(fetchCalls.length).toBe(before);
-
-    act(() => {
-      vi.advanceTimersByTime(1); // 300ms total → location commits, refetch fires
-    });
-    await waitFor(() => expect(fetchCalls.length).toBeGreaterThan(before));
-    expect(fetchCalls[fetchCalls.length - 1]).toContain('location=mumbai');
-    expect(fetchCalls[fetchCalls.length - 1]).toContain('page=1'); // filter change resets page
-  });
-
   it('renders pagination and requests the next page on click', async () => {
     responses = {
       '/items?': [
@@ -287,8 +261,8 @@ describe('BrowsePage — pagination and empty state', () => {
 
     expect(await screen.findByText(/no items match/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /clear all filters/i }));
-    // Should refetch with NO filter params (location included).
+    // Should refetch with NO filter params.
     await waitFor(() => expect(fetchCalls.length).toBeGreaterThan(1));
-    expect(fetchCalls[fetchCalls.length - 1]).not.toMatch(/(category|size|condition|q|location)=/);
+    expect(fetchCalls[fetchCalls.length - 1]).not.toMatch(/(category|size|condition|q)=/);
   });
 });

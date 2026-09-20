@@ -167,11 +167,6 @@ export const browseItemsSchema = object({
   condition: array().of(string().oneOf(ITEM_CONDITION, 'Unknown condition filter')).default([]),
   tags: array().of(string().trim().max(40)).default([]),
   q: string().trim().max(120).default(''),
-  // Location filter (user-requested scope addition): free-text contains-match
-  // against the OWNER'S profile location. Free-text (not an enum) on purpose —
-  // User.location is free text today, so "mumbai" must match "Mumbai, MH".
-  // Bounded like q; the service turns it into a sanitize-safe owner-id list.
-  location: string().trim().max(120).default(''),
   // Admin-only override; validated as a valid status but AUTHORIZED in the
   // service layer (non-admins are force-forced to APPROVED regardless).
   status: string().oneOf(ITEM_STATUS).notRequired(),
