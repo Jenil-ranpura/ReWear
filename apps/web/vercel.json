@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-BACKEND.up.railway.app/api/:path*"
+      "destination": "https://rewear-t6ow.onrender.com/api/:path*"
     }
   ]
 }
