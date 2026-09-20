@@ -1,0 +1,40 @@
+{
+  "name": "@rewear/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ReWear frontend — React 18 + Vite + Tailwind",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests",
+    "test:e2e": "playwright test",
+    "test:e2e:session": "playwright test --config=playwright.session-expiry.config.mjs",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
+    "@rewear/shared-schemas": "*",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/react-query": "^5.103.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.88.0",
+    "react-router-dom": "^7.18.4",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.0.1",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}

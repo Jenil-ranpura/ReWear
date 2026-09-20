@@ -1,0 +1,44 @@
+{
+  "name": "@rewear/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ReWear backend — Express + Mongoose (no Docker)",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "lint": "eslint src tests seed scripts --ext .js,.mjs",
+    "lint:fix": "eslint src tests seed scripts --ext .js,.mjs --fix",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --passWithNoTests",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --onlyChanged --passWithNoTests",
+    "seed": "node --env-file-if-exists=.env seed/seed.js",
+    "verify:db": "node --env-file-if-exists=.env scripts/verify-db.js",
+    "verify:tx": "node --env-file-if-exists=.env scripts/verify-transactions.js"
+  },
+  "dependencies": {
+    "@rewear/shared-schemas": "^0.1.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.11.0",
+    "compression": "^1.8.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.24.4",
+    "multer": "^2.4.0",
+    "sharp": "^0.35.4",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "jest": "^30.5.1",
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2"
+  }
+}

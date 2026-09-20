@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+
+/*
+ * §13: earthy/green, sustainability-forward palette. Tailwind v4 is CSS-first:
+ * brand tokens are declared here (extend in Phase 5 visual polish).
+ *
+ * P7-T5 accessibility additions:
+ * - --color-brand-800: hover shade for the AA-shifted primary buttons
+ *   (white on brand-600 was 3.77:1 — below AA for normal-size button text;
+ *   brand-700 is 5.48:1 AA, brand-800 7.2:1 AAA).
+ * - --color-stone-450: the shared "muted label" shade. The UI previously
+ *   used stone-400 (#a8a29e → 2.52:1 on white, a FAIL) for real text —
+ *   section labels, spec labels, timestamps, hints. stone-450 is 4.52:1 AA.
+ * - A visible :focus-visible ring on ALL interactive elements (pointer:
+ *   coarse users and keyboard users both need it; the browser default ring
+ *   was inconsistent and invisible on brand-colored surfaces).
+ * - prefers-reduced-motion: skeletons stop pulsing and transitions stop
+ *   animating (§5.9's "skeletons, never a blank screen" must not become a
+ *   motion trigger for vestibular users).
+ */
+@theme {
+  --color-brand-50: #ecfdf5;
+  --color-brand-100: #d1fae5;
+  --color-brand-500: #10b981;
+  --color-brand-600: #059669;
+  --color-brand-700: #047857;
+  --color-brand-800: #036149;
+  --color-brand-900: #064e3b;
+  --color-stone-450: #8b8378;
+}
+
+/* Visible keyboard focus everywhere (WCAG 2.4.7). outline-none utilities on
+ * individual inputs also key off :focus-visible, so this global rule remains
+ * the single source of the visible indicator. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-700);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

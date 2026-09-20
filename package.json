@@ -1,0 +1,37 @@
+{
+  "name": "rewear",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ReWear — community clothing-exchange platform (MERN, no Docker)",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "packages/shared-schemas"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev:api": "npm run dev --workspace apps/api",
+    "dev:web": "npm run dev --workspace apps/web",
+    "dev": "npm-run-all --parallel dev:api dev:web",
+    "build": "npm run build --workspace apps/web",
+    "build:api": "echo \"(apps/api is plain Node/ESM — nothing to compile; docker-free by design)\" && exit 0",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "format": "prettier --write \"**/*.{js,jsx,mjs,cjs,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,mjs,cjs,json,css,md}\"",
+    "test": "npm test --workspace apps/api",
+    "test:web": "npm test --workspace apps/web",
+    "test:e2e:session": "npm run test:e2e:session --workspace apps/web",
+    "seed": "npm run seed --workspace apps/api"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.0",
+    "globals": "^17.12.0",
+    "npm-run-all2": "^9.0.3",
+    "prettier": "^3.9.7"
+  }
+}

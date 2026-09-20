@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+
+# Environment files — placeholders (.env.example) are committed; real values never
+.env
+.env.local
+.env.*.local
+
+# Logs & OS noise
+*.log
+npm-debug.log*
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# mongodb-memory-server binary cache
+.global-persist-cache/
+node_modules/.cache/
+
+# Playwright E2E artifacts (P8-T3)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Local working docs — kept out of the public repo on purpose
+implementation.md
+progress.md
+
+# Codebuff/Freebuff agent state
+.freebuff/
