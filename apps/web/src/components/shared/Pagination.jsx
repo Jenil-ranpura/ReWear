@@ -13,18 +13,18 @@ export default function Pagination({ page, totalPages, onPage, className = 'mt-6
         type="button"
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
-        className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50 disabled:opacity-40"
+        className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50 disabled:opacity-40"
       >
         Previous
       </button>
-      <span className="px-2 text-sm text-stone-600">
+      <span className="tabular px-2 text-sm text-ink-2">
         Page {page} of {totalPages}
       </span>
       <button
         type="button"
         disabled={page >= totalPages}
         onClick={() => onPage(page + 1)}
-        className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50 disabled:opacity-40"
+        className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50 disabled:opacity-40"
       >
         Next
       </button>

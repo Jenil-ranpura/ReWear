@@ -13,6 +13,10 @@
  * VIEW-ONLY on purpose: actions (Approve/Reject/Remove) stay on the row
  * so a reading mistake can't fire a mutation from inside a reading
  * surface.
+ *
+ * Redesign: tokenized gallery + spec grid; the emoji flag is gone (icons
+ * are stroke SVGs — never emoji), the advisory renders as a quiet amber
+ * pill. Structure and testids unchanged.
  */
 
 import { useState } from 'react';
@@ -30,8 +34,8 @@ const FALLBACK_IMAGE =
 function Spec({ label, value }) {
   return (
     <div>
-      <dt className="text-xs font-bold uppercase tracking-wide text-stone-450">{label}</dt>
-      <dd className="mt-0.5 font-medium text-stone-900">{value ?? '—'}</dd>
+      <dt className="eyebrow">{label}</dt>
+      <dd className="mt-0.5 font-medium text-ink">{value ?? '—'}</dd>
     </div>
   );
 }
@@ -47,7 +51,7 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
         <div className="space-y-4">
           {/* Gallery — every uploaded photo, main view + thumbnails (the same
             photo-first pattern as the public detail page). */}
-          <div className="aspect-[4/3] overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200">
+          <div className="aspect-[4/3] overflow-hidden rounded-[10px] bg-canvas ring-1 ring-hairline">
             <img
               src={active?.url ?? FALLBACK_IMAGE}
               alt={item.title}
@@ -63,8 +67,8 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
                   onClick={() => setActiveIndex(i)}
                   aria-label={`Show photo ${i + 1} of ${images.length}`}
                   aria-current={i === activeIndex}
-                  className={`h-14 w-14 overflow-hidden rounded-lg ring-2 transition ${
-                    i === activeIndex ? 'ring-brand-600' : 'ring-transparent hover:ring-stone-300'
+                  className={`h-14 w-14 overflow-hidden rounded-[6px] ring-2 transition ${
+                    i === activeIndex ? 'ring-brand-600' : 'ring-transparent hover:ring-hairline'
                   }`}
                 >
                   <img src={img.url} alt="" className="h-full w-full object-cover" />
@@ -74,17 +78,17 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-xl font-bold text-stone-900">{item.title}</h3>
+            <h3 className="font-display text-2xl text-ink">{item.title}</h3>
             <StatusBadge status={item.status} />
-            <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700">
+            <span className="tabular rounded-full bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700">
               {item.pointValue} pts
             </span>
             {item.moderationReason && (
               <span
                 title={item.moderationReason}
-                className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800"
+                className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-status-amber ring-1 ring-amber-200/60"
               >
-                ⚠ {item.moderationReason}
+                {item.moderationReason}
               </span>
             )}
           </div>
@@ -97,10 +101,10 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
           </dl>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wide text-stone-450">
-              Description
-            </h4>
-            <p className="mt-1 whitespace-pre-line text-sm text-stone-700">{item.description}</p>
+            <h4 className="eyebrow">Description</h4>
+            <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-ink-2">
+              {item.description}
+            </p>
           </div>
 
           {item.tags?.length > 0 && (
@@ -108,7 +112,7 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
               {item.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600"
+                  className="rounded-full bg-canvas px-3 py-1 text-xs font-medium text-ink-2 ring-1 ring-hairline"
                 >
                   {tag}
                 </span>
@@ -117,12 +121,12 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
           )}
 
           {/* Owner block — populated on both admin lists (name + email). */}
-          <div className="rounded-xl bg-stone-50 p-3 ring-1 ring-stone-200">
-            <h4 className="text-xs font-bold uppercase tracking-wide text-stone-450">Listed by</h4>
-            <p className="mt-0.5 text-sm font-semibold text-stone-900">
+          <div className="rounded-[10px] bg-canvas p-3 ring-1 ring-hairline">
+            <h4 className="eyebrow">Listed by</h4>
+            <p className="mt-0.5 text-sm font-semibold text-ink">
               {item.ownerId?.name ?? 'Unknown owner'}
             </p>
-            <p className="text-sm text-stone-500">{item.ownerId?.email ?? ''}</p>
+            <p className="text-sm text-ink-2">{item.ownerId?.email ?? ''}</p>
           </div>
 
           {onClose && (
@@ -131,7 +135,7 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
                 to={`/items/${item._id}`}
                 onClick={onClose}
                 data-testid="item-details-open-page"
-                className="text-sm font-semibold text-brand-700 hover:underline"
+                className="link-underline text-sm font-semibold text-brand-700"
               >
                 Open full page →
               </Link>
@@ -139,7 +143,7 @@ export default function ItemDetailsDialog({ open, onClose, item }) {
           )}
         </div>
       ) : (
-        <p className="text-sm text-stone-500">No item data.</p>
+        <p className="text-sm text-ink-2">No item data.</p>
       )}
     </ConfirmDialog>
   );

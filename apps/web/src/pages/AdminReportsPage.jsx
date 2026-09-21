@@ -8,6 +8,9 @@
  * ADJUSTED entries and closes the swap as CANCELLED (server-side). Errors
  * keep the dialog open (§5.9); success toasts (naming the parties) and
  * refetches.
+ *
+ * Redesign: hairline dispute cards, muted status pills, tokenized resolve
+ * dialog. Logic, testids, and copy contracts unchanged.
  */
 
 import { useState } from 'react';
@@ -38,28 +41,28 @@ function Row({ report, onResolve }) {
   return (
     <li
       data-testid="admin-report-row"
-      className="space-y-2 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200"
+      className="card space-y-2 p-4 transition-colors hover:bg-brand-50/40"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-red-700">
+        <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-status-red">
           {REASON_LABELS[report.reason] ?? report.reason}
         </span>
-        <span className="text-sm font-semibold text-stone-800">
+        <span className="text-sm font-semibold text-ink">
           {userName(report.reporterId)} reporting {userName(report.againstId)}
         </span>
         {report.status !== 'OPEN' && (
-          <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-semibold text-stone-600">
+          <span className="rounded-full bg-canvas px-2 py-0.5 text-xs font-semibold text-ink-2 ring-1 ring-hairline">
             {report.status}
           </span>
         )}
       </div>
-      <p className="text-sm text-stone-600">
+      <p className="tabular text-sm text-ink-2">
         Swap: {swap?.type === 'POINTS_REDEMPTION' ? 'Points redemption' : 'Direct swap'} ·{' '}
         {item ? `“${item.title}” (${item.pointValue} pts)` : 'item unavailable'} · status{' '}
         {swap?.status ?? '?'}
       </p>
       {report.details && (
-        <p className="rounded-lg bg-stone-50 px-3 py-2 text-sm text-stone-700 ring-1 ring-stone-200">
+        <p className="rounded-[6px] bg-canvas px-3 py-2 text-sm text-ink ring-1 ring-hairline">
           “{report.details}”
         </p>
       )}
@@ -68,7 +71,7 @@ function Row({ report, onResolve }) {
           <button
             type="button"
             onClick={() => onResolve(report)}
-            className="rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-800"
+            className="pressable rounded-[6px] bg-brand-700 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
           >
             Resolve
           </button>
@@ -125,9 +128,10 @@ export default function AdminReportsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-stone-900">Admin — reports</h1>
-        <p className="mt-1 text-sm text-stone-500">
+      <header className="pt-4">
+        <p className="eyebrow">Admin</p>
+        <h1 className="font-display mt-2 text-4xl text-ink">Reports</h1>
+        <p className="mt-2 text-sm text-ink-2">
           Swap disputes. Every decision is human and audited — nothing reverses automatically.
         </p>
       </header>
@@ -138,9 +142,9 @@ export default function AdminReportsPage() {
         query={reportsQuery}
         isEmpty={(d) => d?.total === 0}
         empty={
-          <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200">
-            <p className="text-lg font-semibold text-stone-800">No disputes filed</p>
-            <p className="mt-1 text-stone-500">
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-2xl text-ink">No disputes filed</p>
+            <p className="mt-2 text-sm text-ink-2">
               Reports about completed swaps will appear here for review.
             </p>
           </div>
@@ -148,7 +152,7 @@ export default function AdminReportsPage() {
       >
         {(data) => (
           <>
-            <p className="text-sm text-stone-500" aria-live="polite">
+            <p className="tabular text-sm text-ink-2" aria-live="polite">
               {data.total} report{data.total === 1 ? '' : 's'}
             </p>
             <ul className="space-y-3">
@@ -178,14 +182,17 @@ export default function AdminReportsPage() {
           {/* §5.9: server errors surface INSIDE the open dialog so the admin
               can correct/retry without losing their in-progress decision. */}
           {error && (
-            <p role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p
+              role="alert"
+              className="mb-3 rounded-[6px] bg-red-50 px-3 py-2 text-sm text-status-red"
+            >
               {error}
             </p>
           )}
           <div className="space-y-3">
             <fieldset className="space-y-1.5">
-              <legend className="text-sm font-semibold text-stone-700">Remedy</legend>
-              <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-stone-200 p-2 text-sm hover:bg-stone-50">
+              <legend className="text-sm font-semibold text-ink">Remedy</legend>
+              <label className="flex cursor-pointer items-center gap-2.5 rounded-[6px] p-2 text-sm ring-1 ring-hairline transition-colors hover:bg-brand-50/60">
                 <input
                   type="radio"
                   name="report-remedy"
@@ -195,7 +202,7 @@ export default function AdminReportsPage() {
                 />
                 Dismiss — close with a note, no points move
               </label>
-              <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-stone-200 p-2 text-sm hover:bg-stone-50">
+              <label className="flex cursor-pointer items-center gap-2.5 rounded-[6px] p-2 text-sm ring-1 ring-hairline transition-colors hover:bg-brand-50/60">
                 <input
                   type="radio"
                   name="report-remedy"
@@ -207,8 +214,8 @@ export default function AdminReportsPage() {
               </label>
             </fieldset>
             <div>
-              <label htmlFor="resolution-note" className="block text-sm font-medium text-stone-700">
-                Resolution note <span className="font-normal text-red-600">(required)</span>
+              <label htmlFor="resolution-note" className="block text-sm font-semibold text-ink">
+                Resolution note <span className="font-normal text-status-red">(required)</span>
               </label>
               <textarea
                 id="resolution-note"
@@ -217,7 +224,7 @@ export default function AdminReportsPage() {
                 value={resolving.note}
                 onChange={(e) => setResolving({ ...resolving, note: e.target.value })}
                 placeholder="What did you find, and why this remedy?"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+                className="field mt-1"
               />
             </div>
           </div>

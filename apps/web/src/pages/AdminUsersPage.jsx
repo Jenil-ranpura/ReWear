@@ -4,6 +4,10 @@
  * <ConfirmDialog> (danger for ban — banned users lose their session on their
  * next request, §11). Reason optional (stored on the AdminAction audit row).
  * Errors surface as a role=alert banner; the dialog stays open for retry.
+ *
+ * Redesign: dense hairline rows on the token system (same family as the
+ * queue), serif page title, quiet pill filters. All queries, testids, and
+ * flows unchanged.
  */
 
 import { useState } from 'react';
@@ -81,17 +85,18 @@ export default function AdminUsersPage() {
   }
 
   const filterButton = (active) =>
-    `rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition ${
+    `pressable rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition-colors ${
       active
-        ? 'bg-brand-700 text-white ring-brand-600'
-        : 'bg-white text-stone-700 ring-stone-300 hover:bg-stone-50'
+        ? 'bg-brand-700 text-white ring-brand-700'
+        : 'bg-white text-ink-2 ring-hairline hover:bg-brand-50 hover:text-ink'
     }`;
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-stone-900">Admin — users</h1>
-        <p className="mt-1 text-sm text-stone-500">
+      <header className="pt-4">
+        <p className="eyebrow">Admin</p>
+        <h1 className="font-display mt-2 text-4xl text-ink">Users</h1>
+        <p className="mt-2 text-sm text-ink-2">
           Search accounts and manage access. Banned users are signed out on their next request.
         </p>
       </header>
@@ -99,17 +104,14 @@ export default function AdminUsersPage() {
       <AdminTabs active="Users" />
 
       {error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
+        <p role="alert" className="rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red">
           {error}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+      <div className="card flex flex-wrap items-center gap-3 p-4">
         <form
-          className="flex flex-1 gap-2"
+          className="flex min-w-56 flex-1 gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             resetAndRefresh({ q: qInput });
@@ -121,11 +123,11 @@ export default function AdminUsersPage() {
             onChange={(e) => setQInput(e.target.value)}
             placeholder="Search name or email…"
             aria-label="Search users"
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+            className="field"
           />
           <button
             type="submit"
-            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+            className="pressable rounded-[6px] bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
           >
             Search
           </button>
@@ -164,9 +166,9 @@ export default function AdminUsersPage() {
         query={usersQuery}
         isEmpty={(d) => d?.total === 0}
         empty={
-          <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200">
-            <p className="text-lg font-semibold text-stone-800">No users match</p>
-            <p className="mt-1 text-stone-500">
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-2xl text-ink">No users match</p>
+            <p className="mt-2 text-sm text-ink-2">
               Try a different search term or clearing the filters.
             </p>
           </div>
@@ -174,15 +176,15 @@ export default function AdminUsersPage() {
       >
         {(data) => (
           <>
-            <p className="text-sm text-stone-500" aria-live="polite">
+            <p className="tabular text-sm text-ink-2" aria-live="polite">
               {data.total} user{data.total === 1 ? '' : 's'} found
             </p>
-            <ul className="divide-y divide-stone-100 rounded-xl bg-white shadow-sm ring-1 ring-stone-200">
+            <ul className="card divide-y divide-hairline overflow-hidden">
               {data.users.map((user) => (
                 <li
                   key={user._id}
                   data-testid="admin-user-row"
-                  className="flex flex-wrap items-center justify-between gap-3 p-4"
+                  className="flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:bg-brand-50/40"
                 >
                   <div className="min-w-0 space-y-0.5">
                     <div className="flex flex-wrap items-center gap-2">
@@ -190,27 +192,27 @@ export default function AdminUsersPage() {
                           the admin can pull the full history before acting. */}
                       <Link
                         to={`/admin/users/${user._id}`}
-                        className="font-semibold text-stone-900 hover:text-brand-700 hover:underline"
+                        className="font-semibold text-ink underline-offset-2 hover:underline"
                       >
                         {user.name}
                       </Link>
                       {user.role === 'ADMIN' && (
-                        <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-800">
+                        <span className="rounded-full bg-tint px-2 py-0.5 text-xs font-semibold text-brand-700">
                           ADMIN
                         </span>
                       )}
                       {user.isBanned && (
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">
+                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-status-red">
                           BANNED
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-stone-500">
+                    <p className="tabular text-sm text-ink-2">
                       {user.email} · {user.pointsBalance ?? 0} pts · joined{' '}
                       {formatDate(user.createdAt)}
                     </p>
                     <p className="text-xs text-brand-700">
-                      <Link to={`/admin/users/${user._id}`} className="hover:underline">
+                      <Link to={`/admin/users/${user._id}`} className="link-underline">
                         View details →
                       </Link>
                     </p>
@@ -219,7 +221,7 @@ export default function AdminUsersPage() {
                     <button
                       type="button"
                       onClick={() => onBan(user, false)}
-                      className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+                      className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
                     >
                       Unban
                     </button>
@@ -227,7 +229,7 @@ export default function AdminUsersPage() {
                     <button
                       type="button"
                       onClick={() => onBan(user, true)}
-                      className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50"
+                      className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-status-red ring-1 ring-status-red/30 transition-colors hover:bg-red-50"
                     >
                       Ban
                     </button>
@@ -258,7 +260,7 @@ export default function AdminUsersPage() {
           onConfirm={confirmBan}
         >
           <div className="space-y-1">
-            <label htmlFor="ban-reason" className="text-sm font-semibold text-stone-700">
+            <label htmlFor="ban-reason" className="text-sm font-semibold text-ink">
               Reason <span className="font-normal text-stone-450">(stored in the audit log)</span>
             </label>
             <textarea
@@ -268,7 +270,7 @@ export default function AdminUsersPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Repeated fraudulent listings"
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+              className="field"
             />
           </div>
         </ConfirmDialog>

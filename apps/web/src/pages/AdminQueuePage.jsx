@@ -20,22 +20,23 @@ import Pagination from '../components/shared/Pagination.jsx';
 import StatusBadge from '../components/shared/StatusBadge.jsx';
 import { useToast } from '../components/shared/ToastProvider.jsx';
 
-/** Sibling-tab bar shared by the two admin pages (§12 sitemap routes). */
+/** Sibling-tab bar shared by the admin pages (§12 sitemap routes). Dense,
+ * calm, hairline — Linear-like. */
 export function AdminTabs({ active }) {
   const tab = (to, label) => (
     <NavLink
       to={to}
-      className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+      className={`pressable rounded-[6px] px-4 py-2 text-sm font-semibold transition-colors ${
         active === label
           ? 'bg-brand-700 text-white'
-          : 'bg-white text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50'
+          : 'bg-white text-ink-2 ring-1 ring-hairline hover:bg-brand-50 hover:text-ink'
       }`}
     >
       {label}
     </NavLink>
   );
   return (
-    <div role="tablist" aria-label="Admin sections" className="flex gap-2">
+    <div role="tablist" aria-label="Admin sections" className="flex flex-wrap gap-2">
       {tab('/admin', 'Pending items')}
       {tab('/admin/live', 'Live items')}
       {tab('/admin/users', 'Users')}
@@ -99,9 +100,10 @@ export default function AdminQueuePage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-stone-900">Admin — moderation</h1>
-        <p className="mt-1 text-sm text-stone-500">
+      <header className="pt-4">
+        <p className="eyebrow">Admin</p>
+        <h1 className="font-display mt-2 text-4xl text-ink">Moderation queue</h1>
+        <p className="mt-2 text-sm text-ink-2">
           New listings wait here until approved. Oldest first, so nothing stalls.
         </p>
       </header>
@@ -109,10 +111,7 @@ export default function AdminQueuePage() {
       <AdminTabs active="Pending items" />
 
       {error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
+        <p role="alert" className="rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red">
           {error}
         </p>
       )}
@@ -121,15 +120,15 @@ export default function AdminQueuePage() {
         query={queueQuery}
         isEmpty={(d) => d?.total === 0}
         empty={
-          <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200">
-            <p className="text-lg font-semibold text-stone-800">The queue is clear</p>
-            <p className="mt-1 text-stone-500">No listings are waiting for review right now.</p>
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-2xl text-ink">The queue is clear</p>
+            <p className="mt-2 text-sm text-ink-2">No listings are waiting for review right now.</p>
           </div>
         }
       >
         {(data) => (
           <>
-            <p className="text-sm text-stone-500" aria-live="polite">
+            <p className="tabular text-sm text-ink-2" aria-live="polite">
               {data.total} item{data.total === 1 ? '' : 's'} awaiting review
             </p>
             <ul className="space-y-3">
@@ -137,36 +136,38 @@ export default function AdminQueuePage() {
                 <li
                   key={item._id}
                   data-testid="admin-queue-row"
-                  className="flex flex-wrap items-center gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200"
+                  className="card flex flex-wrap items-center gap-4 p-4"
                 >
                   {primaryImage(item) ? (
                     <img
                       src={primaryImage(item).url}
                       alt={`Photo of ${item.title}`}
-                      className="h-16 w-16 rounded-lg object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      className="h-16 w-16 rounded-[6px] object-cover"
                     />
                   ) : (
                     <div
                       aria-hidden="true"
-                      className="flex h-16 w-16 items-center justify-center rounded-lg bg-stone-100 text-xl"
+                      className="font-display flex h-16 w-16 items-center justify-center rounded-[6px] bg-tint text-2xl text-brand-700"
                     >
-                      👕
+                      {(item.title ?? '?').charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-stone-900">{item.title}</span>
+                      <span className="font-semibold text-ink">{item.title}</span>
                       <StatusBadge status={item.status} />
                       {item.moderationReason && (
                         <span
                           title={item.moderationReason}
-                          className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800"
+                          className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-status-amber ring-1 ring-amber-200/60"
                         >
-                          ⚠ Flagged for review
+                          Flagged for review
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-stone-500">
+                    <p className="tabular text-sm text-ink-2">
                       {item.pointValue} pts · listed by {item.ownerId?.name ?? 'unknown'} (
                       {item.ownerId?.email ?? 'no email'})
                     </p>
@@ -177,21 +178,21 @@ export default function AdminQueuePage() {
                       type="button"
                       data-testid={`admin-details-${item._id}`}
                       onClick={() => setDetailsItem(item)}
-                      className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+                      className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
                     >
                       Details
                     </button>
                     <button
                       type="button"
                       onClick={() => onAction(item, 'APPROVE')}
-                      className="rounded-lg bg-brand-700 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+                      className="pressable rounded-[6px] bg-brand-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
                     >
                       Approve
                     </button>
                     <button
                       type="button"
                       onClick={() => onAction(item, 'REJECT')}
-                      className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50"
+                      className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-status-red ring-1 ring-status-red/30 transition-colors hover:bg-red-50"
                     >
                       Reject
                     </button>
@@ -231,7 +232,7 @@ export default function AdminQueuePage() {
         >
           {pendingAction.action === 'REJECT' && (
             <div className="space-y-1">
-              <label htmlFor="reject-reason" className="text-sm font-semibold text-stone-700">
+              <label htmlFor="reject-reason" className="text-sm font-semibold text-ink">
                 Reason for the owner{' '}
                 <span className="font-normal text-stone-450">(encouraged)</span>
               </label>
@@ -242,7 +243,7 @@ export default function AdminQueuePage() {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="e.g. Photos don’t match the described condition"
-                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+                className="field"
               />
             </div>
           )}

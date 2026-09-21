@@ -106,7 +106,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose?.();
@@ -119,10 +119,12 @@ export default function ConfirmDialog({
         aria-busy={busy || undefined}
         aria-labelledby="confirm-dialog-title"
         aria-describedby={message ? 'confirm-dialog-description' : undefined}
-        className={`w-full rounded-xl bg-white p-6 shadow-xl ${wide ? 'max-w-2xl' : 'max-w-sm'}`}
+        className={`page-enter w-full rounded-[12px] bg-white p-6 shadow-[var(--shadow-lift)] ${
+          wide ? 'max-w-2xl' : 'max-w-sm'
+        }`}
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 id="confirm-dialog-title" className="text-lg font-bold text-stone-900">
+          <h2 id="confirm-dialog-title" className="text-lg font-bold text-ink">
             {title}
           </h2>
           {/* Informational dialogs have no action row — always offer a
@@ -133,14 +135,14 @@ export default function ConfirmDialog({
               onClick={onClose}
               aria-label="Close dialog"
               data-testid="dialog-close"
-              className="rounded-md p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+              className="rounded-[6px] p-1 text-stone-450 transition-colors hover:bg-canvas hover:text-ink"
             >
               <span aria-hidden="true">✕</span>
             </button>
           )}
         </div>
         {message && (
-          <p id="confirm-dialog-description" className="mt-2 text-sm text-stone-600">
+          <p id="confirm-dialog-description" className="mt-2 text-sm text-ink-2">
             {message}
           </p>
         )}
@@ -151,7 +153,7 @@ export default function ConfirmDialog({
               type="button"
               onClick={onClose}
               disabled={busy}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-100 disabled:opacity-50"
+              className="pressable rounded-[6px] px-4 py-2 text-sm font-semibold text-ink-2 transition-colors hover:bg-canvas hover:text-ink disabled:opacity-50"
             >
               {cancelLabel}
             </button>
@@ -160,8 +162,8 @@ export default function ConfirmDialog({
               type="button"
               onClick={onConfirm}
               disabled={busy || confirmDisabled}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
-                danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-700 hover:bg-brand-800'
+              className={`pressable rounded-[6px] px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50 ${
+                danger ? 'bg-status-red hover:bg-red-700' : 'bg-brand-700 hover:bg-brand-800'
               }`}
             >
               {busy ? 'Working…' : confirmLabel}

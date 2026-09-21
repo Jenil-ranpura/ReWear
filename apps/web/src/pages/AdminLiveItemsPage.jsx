@@ -9,6 +9,11 @@
  * A Removed tab shows the takedown trail (title stays hidden, no existence
  * leak — §15). Success refetches; errors surface as a role=alert banner and
  * the dialog stays open (§5.9).
+ *
+ * Redesign: tokenized hairline rows, serif title, stroke-icon fallback
+ * instead of the emoji thumb, primary-image picker preserved. All logic,
+ * testids (admin-details-*, admin-remove-*, admin-live-row), role=tab
+ * semantics, and dialog contracts unchanged.
  */
 
 import { useState } from 'react';
@@ -79,9 +84,10 @@ export default function AdminLiveItemsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-stone-900">Admin — live items</h1>
-        <p className="mt-1 text-sm text-stone-500">
+      <header className="pt-4">
+        <p className="eyebrow">Admin</p>
+        <h1 className="font-display mt-2 text-4xl text-ink">Live items</h1>
+        <p className="mt-2 text-sm text-ink-2">
           Everything currently public. Remove a listing if it turns out to be inappropriate or spam
           after approval — the owner sees the reason.
         </p>
@@ -103,10 +109,10 @@ export default function AdminLiveItemsPage() {
                 setQuery('');
                 setSearch('');
               }}
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+              className={`pressable rounded-[6px] px-3 py-1.5 text-sm font-semibold transition-colors ${
                 status === s
-                  ? 'bg-stone-800 text-white'
-                  : 'bg-white text-stone-600 ring-1 ring-stone-300 hover:bg-stone-50'
+                  ? 'bg-ink text-white'
+                  : 'bg-white text-ink-2 ring-1 ring-hairline hover:bg-brand-50 hover:text-ink'
               }`}
             >
               {s === 'APPROVED' ? 'Live' : 'Removed'}
@@ -123,11 +129,11 @@ export default function AdminLiveItemsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by title…"
-            className="w-48 rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            className="field w-48"
           />
           <button
             type="submit"
-            className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+            className="pressable rounded-[6px] bg-white px-3 py-1.5 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
           >
             Search
           </button>
@@ -135,10 +141,7 @@ export default function AdminLiveItemsPage() {
       </div>
 
       {error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
+        <p role="alert" className="rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red">
           {error}
         </p>
       )}
@@ -147,11 +150,11 @@ export default function AdminLiveItemsPage() {
         query={listQuery}
         isEmpty={(d) => d?.total === 0}
         empty={
-          <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200">
-            <p className="text-lg font-semibold text-stone-800">
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-2xl text-ink">
               {isLiveTab ? 'No live items match.' : 'Nothing has been removed.'}
             </p>
-            <p className="mt-1 text-stone-500">
+            <p className="mt-2 text-sm text-ink-2">
               {isLiveTab
                 ? 'Approved listings appear here the moment they pass review.'
                 : 'Removed listings (and the reason) show up here.'}
@@ -161,7 +164,7 @@ export default function AdminLiveItemsPage() {
       >
         {(data) => (
           <>
-            <p className="text-sm text-stone-500" aria-live="polite">
+            <p className="tabular text-sm text-ink-2" aria-live="polite">
               {data.total} {isLiveTab ? 'live' : 'removed'} item{data.total === 1 ? '' : 's'}
               {query ? ` matching “${query}”` : ''}
             </p>
@@ -170,27 +173,40 @@ export default function AdminLiveItemsPage() {
                 <li
                   key={item._id}
                   data-testid="admin-live-row"
-                  className="flex flex-wrap items-center gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200"
+                  className="card flex flex-wrap items-center gap-4 p-4"
                 >
                   {primaryImage(item) ? (
                     <img
                       src={primaryImage(item).url}
                       alt={`Photo of ${item.title}`}
-                      className="h-16 w-16 rounded-lg object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      className="h-16 w-16 rounded-[6px] object-cover"
                     />
                   ) : (
                     <div
                       aria-hidden="true"
-                      className="flex h-16 w-16 items-center justify-center rounded-lg bg-stone-100 text-xl"
+                      className="flex h-16 w-16 items-center justify-center rounded-[6px] bg-tint"
                     >
-                      👕
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                        className="h-6 w-6 text-brand-600"
+                      >
+                        <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23Z" />
+                      </svg>
                     </div>
                   )}
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
                         to={`/items/${item._id}`}
-                        className="font-semibold text-stone-900 hover:underline"
+                        className="font-semibold text-ink underline-offset-2 hover:underline"
                       >
                         {item.title}
                       </Link>
@@ -198,13 +214,13 @@ export default function AdminLiveItemsPage() {
                       {item.moderationReason && (
                         <span
                           title={item.moderationReason}
-                          className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800"
+                          className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-status-red"
                         >
                           Removed: {item.moderationReason}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-stone-500">
+                    <p className="tabular text-sm text-ink-2">
                       {item.pointValue} pts · listed by {item.ownerId?.name ?? 'unknown'} (
                       {item.ownerId?.email ?? 'no email'})
                     </p>
@@ -214,7 +230,7 @@ export default function AdminLiveItemsPage() {
                       type="button"
                       data-testid={`admin-details-${item._id}`}
                       onClick={() => setDetailsItem(item)}
-                      className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+                      className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
                     >
                       Details
                     </button>
@@ -223,7 +239,7 @@ export default function AdminLiveItemsPage() {
                         type="button"
                         data-testid={`admin-remove-${item._id}`}
                         onClick={() => onRemove(item)}
-                        className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50"
+                        className="pressable rounded-[6px] bg-white px-3 py-2 text-sm font-semibold text-status-red ring-1 ring-status-red/30 transition-colors hover:bg-red-50"
                       >
                         Remove
                       </button>
@@ -254,8 +270,8 @@ export default function AdminLiveItemsPage() {
           onConfirm={confirmRemove}
         >
           <div className="space-y-1">
-            <label htmlFor="remove-reason" className="text-sm font-semibold text-stone-700">
-              Reason for the owner <span className="font-normal text-red-600">(required)</span>
+            <label htmlFor="remove-reason" className="text-sm font-semibold text-ink">
+              Reason for the owner <span className="font-normal text-status-red">(required)</span>
             </label>
             <textarea
               id="remove-reason"
@@ -264,7 +280,7 @@ export default function AdminLiveItemsPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Counterfeit brand listing"
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+              className="field"
             />
             {!reason.trim() && (
               <p className="text-xs text-stone-450">A reason is required to enable Remove.</p>

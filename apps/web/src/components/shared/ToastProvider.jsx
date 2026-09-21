@@ -50,9 +50,10 @@ export function useToast() {
 const DEFAULT_TTL_MS = 5_000;
 
 const TONE_RING = {
+  // `ring-brand-200` is a test contract (toast.test.jsx tone assertion).
   success: 'ring-brand-200',
-  info: 'ring-stone-200',
-  error: 'ring-red-200',
+  info: 'ring-hairline',
+  error: 'ring-red-200/70',
 };
 
 export default function ToastProvider({ children }) {
@@ -109,17 +110,17 @@ export default function ToastProvider({ children }) {
             key={toast.id}
             role="status"
             data-testid={toast.testId ?? 'toast'}
-            className={`pointer-events-auto rounded-xl bg-white p-3.5 shadow-lg ring-1 ${
+            className={`pointer-events-auto page-enter rounded-[12px] bg-white p-3.5 shadow-[var(--shadow-lift)] ring-1 ${
               TONE_RING[toast.tone] ?? TONE_RING.info
             }`}
           >
-            <p className="text-sm text-stone-700">{toast.message}</p>
+            <p className="text-sm text-ink">{toast.message}</p>
             <div className="mt-2 flex items-center gap-3">
               {toast.action && (
                 <Link
                   to={toast.action.to}
                   onClick={() => dismiss(toast.id)}
-                  className="text-sm font-semibold text-brand-700 hover:underline"
+                  className="link-underline text-sm font-semibold text-brand-700"
                 >
                   {toast.action.label}
                 </Link>
@@ -127,7 +128,7 @@ export default function ToastProvider({ children }) {
               <button
                 type="button"
                 onClick={() => dismiss(toast.id)}
-                className="text-sm font-medium text-stone-500 hover:text-stone-700"
+                className="text-sm font-medium text-ink-2 transition-colors hover:text-ink"
               >
                 Dismiss
               </button>
