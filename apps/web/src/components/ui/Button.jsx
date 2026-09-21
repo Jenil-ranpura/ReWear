@@ -15,8 +15,7 @@ const VARIANTS = {
   secondary:
     'bg-white text-ink ring-1 ring-hairline hover:bg-brand-50 disabled:hover:bg-white disabled:opacity-50',
   ghost: 'text-ink-2 hover:bg-brand-50 hover:text-ink disabled:opacity-50',
-  danger:
-    'bg-white text-status-red ring-1 ring-status-red/30 hover:bg-red-50 disabled:opacity-50',
+  danger: 'bg-white text-status-red ring-1 ring-status-red/30 hover:bg-red-50 disabled:opacity-50',
 };
 
 const SIZES = {

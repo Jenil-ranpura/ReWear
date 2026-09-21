@@ -1,20 +1,21 @@
+import { Link } from 'react-router-dom';
+
 /**
  * 403 page (§11): authenticated users who lack the admin role land here via
  * ProtectedRoute (requireAdmin). Distinct from 401, which redirects to login.
+ * Tests rely on the "403"-bearing heading and the back-to-home link.
  */
-
-import { Link } from 'react-router-dom';
-
 export default function ForbiddenPage() {
   return (
-    <section className="mx-auto max-w-xl rounded-xl border border-dashed border-stone-300 bg-white p-10 text-center">
-      <h1 className="text-3xl font-bold text-stone-800">403 — Not allowed</h1>
-      <p className="mt-2 text-stone-500">
+    <section className="card mx-auto max-w-xl px-6 py-20 text-center">
+      {/* Heading text is a test contract (profileSettings + auth suites). */}
+      <h1 className="font-display text-5xl text-brand-700 sm:text-7xl">403 — Not allowed</h1>
+      <p className="measure mx-auto mt-4 text-sm leading-relaxed text-ink-2">
         You do not have permission to view this area. Admin access is required.
       </p>
       <Link
         to="/"
-        className="mt-6 inline-block rounded-lg bg-emerald-700 px-5 py-2.5 font-semibold text-white transition hover:bg-emerald-800"
+        className="pressable mt-8 inline-block rounded-[6px] bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
       >
         Back to home
       </Link>

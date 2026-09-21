@@ -343,8 +343,11 @@ describe('Layout auth awareness (P3-T7)', () => {
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeInTheDocument();
     });
-    // The previously-missing Dashboard link, now authed-only.
-    const dashLink = await screen.findByRole('link', { name: 'Dashboard' });
+    // The previously-missing Dashboard link, now authed-only. Regex so the
+    // match is stable whether or not the ambient badge (which extends the
+    // accessible name) has rendered yet — the count-in-name contract is
+    // asserted explicitly below.
+    const dashLink = await screen.findByRole('link', { name: /^Dashboard/ });
     expect(dashLink).toHaveAttribute('href', '/dashboard');
     // Badge: 2 unseen PENDING incoming (from the mocked list above).
     const badge = await screen.findByTestId('nav-new-swaps');

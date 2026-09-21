@@ -72,7 +72,13 @@ html {
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
-  font-family: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family:
+    'Inter Variable',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
   font-feature-settings: 'cv05' 1; /* Inter: open digits */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -81,7 +87,10 @@ body {
 /* Display serif — headlines + big numbers only */
 .font-display {
   font-family: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-  font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 72;
+  font-variation-settings:
+    'SOFT' 0,
+    'WONK' 0,
+    'opsz' 72;
   letter-spacing: -0.02em;
 }
 

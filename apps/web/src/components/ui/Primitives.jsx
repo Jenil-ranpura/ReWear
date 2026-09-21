@@ -35,9 +35,7 @@ export function Tag({ children, className = '' }) {
 /** SectionHeading — eyebrow + display serif title + optional sub. */
 export function SectionHeading({ eyebrow, title, sub, align = 'left', className = '' }) {
   return (
-    <div
-      className={`${align === 'center' ? 'mx-auto text-center' : ''} max-w-2xl ${className}`}
-    >
+    <div className={`${align === 'center' ? 'mx-auto text-center' : ''} max-w-2xl ${className}`}>
       {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
       <h2 className="font-display text-3xl text-ink sm:text-4xl">{title}</h2>
       {sub && <p className="measure mt-3 text-base leading-relaxed text-ink-2">{sub}</p>}
