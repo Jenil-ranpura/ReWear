@@ -159,7 +159,7 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 - Lives in `packages/shared-schemas/src/pointsFormula.js` (api re-exports it) — the UI grid and the server's computation can never drift.
 - **`pointValue` is never user-settable**: the service derives it via `computeSuggestedPoints(category, condition)` on create and on category/condition change; a client-smuggled value is stripped/ignored (schema fail-closed transform), NOT errored. The form field is read-only with an explanatory hint.
 - **Invariant (test-enforced):** `users.pointsBalance` is a cache and must ALWAYS equal `Σ pointstransactions.amount` for the user. Every balance change writes a ledger doc **in the same transaction**. `lib/reconcilePoints.js` is session-aware and used in tests/scripts.
-- New users start at a schema-default **25 points** (user decision, commit "changing the default coins"). KNOWN DIVERGENCE: the grant is NOT ledger-backed — registration writes no EARNED doc, so a freshly registered user's cache ≠ Σ ledger until their first transaction; reconcile at P10 (write the grant as a ledger doc) or accept and document. There is no top-up endpoint (no payments by design) — the seed funds the demo user.
+- New users start at a schema-default **25 points** (user decision, commit "changing the default coins"; **re-confirmed as final** — user decision, tests aligned). KNOWN DIVERGENCE: the grant is NOT ledger-backed — registration writes no EARNED doc, so a freshly registered user's cache ≠ Σ ledger until their first transaction; reconcile at P10 (write the grant as a ledger doc) or accept and document. There is no top-up endpoint (no payments by design) — the seed funds the demo user.
 
 ---
 

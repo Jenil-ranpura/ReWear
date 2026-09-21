@@ -94,11 +94,11 @@ describe('User schema (§9.1)', () => {
     passwordHash: '$2a$10$exampleexampleexampleexampleexampleexampleexampleexam',
   };
 
-  it('defaults role to USER, pointsBalance to 0, isBanned to false', () => {
+  it('defaults role to USER, pointsBalance to 25, isBanned to false', () => {
     const user = new User(validUser);
     expect(user.validateSync()).toBeUndefined();
     expect(user.role).toBe('USER');
-    expect(user.pointsBalance).toBe(0);
+    expect(user.pointsBalance).toBe(25);
     expect(user.isBanned).toBe(false);
   });
 

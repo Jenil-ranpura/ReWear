@@ -56,10 +56,11 @@ describe('POST /api/v1/auth/register', () => {
     expect(refreshCookie).toContain('SameSite=Strict');
     expect(JSON.stringify(res.body)).not.toContain('refreshToken');
 
-    // Persisted state: lowercased email, default points balance (§5.1).
+    // Persisted state: lowercased email, default points balance (§5.1 —
+    // signup grants 25 points, user decision recorded in AI-CONTEXT.md).
     const dbUser = await User.findOne({ email: 'ada@example.com' });
     expect(dbUser).not.toBeNull();
-    expect(dbUser.pointsBalance).toBe(0);
+    expect(dbUser.pointsBalance).toBe(25);
   });
 
   it('rejects a short password with 400 VALIDATION (§11: min 8, server-side)', async () => {
