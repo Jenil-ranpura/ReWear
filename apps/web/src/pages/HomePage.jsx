@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom';
 import FeaturedCarousel from '../components/shared/FeaturedCarousel.jsx';
 import { Reveal, SectionHeading } from '../components/ui/Primitives.jsx';
 import { ArrowRightIcon, LeafIcon, SparkleIcon, SwapIcon } from '../components/ui/Icon.jsx';
-import { BASE_POINTS, CONDITION_MULTIPLIERS, ITEM_CATEGORIES } from '@rewear/shared-schemas';
+import {
+  computeSuggestedPoints,
+  ITEM_CATEGORIES,
+  CONDITION_MULTIPLIERS,
+} from '@rewear/shared-schemas';
 
 const STEPS = [
   {
@@ -137,8 +141,12 @@ export default function HomePage() {
                         {CATEGORY_LABELS[cat] ?? cat}
                       </th>
                       {Object.keys(CONDITION_MULTIPLIERS).map((cond) => (
-                        <td key={cond} className="px-3 py-2.5 text-right text-ink-2">
-                          {BASE_POINTS[cat] * CONDITION_MULTIPLIERS[cond]}
+                        <td key={cond} className="tabular px-3 py-2.5 text-right text-ink-2">
+                          {/* Shared formula helper: rounds and clamps to ≥1 —
+                              identical values to every item's pointValue and
+                              the ItemForm table (e.g. 55 × 1.5 → 83, never a
+                              float artifact like 31.499999999999996). */}
+                          {computeSuggestedPoints(cat, cond)}
                         </td>
                       ))}
                     </tr>
@@ -153,7 +161,10 @@ export default function HomePage() {
       {/* ── Mission ───────────────────────────────────────────────────── */}
       <section className="mx-auto mt-28 max-w-6xl sm:mt-36">
         <Reveal>
-          <div className="card bg-brand-700 px-6 py-14 text-center sm:px-16">
+          {/* bg-brand-700 must WIN over .card's background:#fff (CSS source
+              order does not guarantee it): the mission card is the one place
+              a surface utility overrides the token class. */}
+          <div className="card bg-brand-700! px-6 py-14 text-center sm:px-16">
             <span
               aria-hidden="true"
               className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white"
