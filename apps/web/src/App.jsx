@@ -9,6 +9,7 @@ import BrowsePage from './pages/BrowsePage.jsx';
 import ItemDetailPage from './pages/ItemDetailPage.jsx';
 import ItemFormPage from './pages/ItemFormPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import ProfileSettingsPage from './pages/ProfileSettingsPage.jsx';
 import MyItemsPage from './pages/MyItemsPage.jsx';
 import MySwapsPage from './pages/MySwapsPage.jsx';
 import PointsHistoryPage from './pages/PointsHistoryPage.jsx';
@@ -52,6 +53,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/profile"
+          element={
+            <ProtectedRoute>
+              <ProfileSettingsPage />
             </ProtectedRoute>
           }
         />

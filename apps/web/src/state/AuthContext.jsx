@@ -99,9 +99,19 @@ export function AuthProvider({ children }) {
     setSessionExpiresAt(null);
   }, []);
 
+  /**
+   * Profile self-service: merge the API's safe user over the current one so
+   * the navbar name / points chip / dashboard reflect the edit immediately
+   * (no refetch round-trip). Session state is untouched — a profile edit
+   * neither extends nor revokes the session window.
+   */
+  const updateUser = useCallback((safeUser) => {
+    setUser((prev) => (prev ? { ...prev, ...safeUser } : prev));
+  }, []);
+
   const value = useMemo(
-    () => ({ user, status, login, register, logout }),
-    [user, status, login, register, logout]
+    () => ({ user, status, login, register, logout, updateUser }),
+    [user, status, login, register, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

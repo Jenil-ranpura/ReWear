@@ -18,3 +18,12 @@ export function listMyItems() {
 export function pointsHistory(query = {}) {
   return apiFetch('/users/me/points/history', { query });
 }
+
+/**
+ * Profile self-service (§10 PATCH /users/me). payload: { name, phone?,
+ * currentPassword?, password? } — validated by the SAME shared
+ * profileUpdateSchema the API enforces. Returns the updated safe user.
+ */
+export function updateProfile(payload) {
+  return apiFetch('/users/me', { method: 'PATCH', body: payload });
+}

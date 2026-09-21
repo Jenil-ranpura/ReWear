@@ -96,9 +96,33 @@ export default function Layout() {
               {status === 'authenticated' && user ? (
                 <div className="ml-2 flex items-center gap-2">
                   <PointsBalance balance={user.pointsBalance} />
-                  <span className="hidden text-sm font-medium text-stone-700 sm:inline">
-                    {user.name}
-                  </span>
+                  {/* Clickable profile → settings (user request: edit name /
+                    phone / password from the profile). Link wraps the avatar
+                    OR initial so there is always an accessible name. */}
+                  <Link
+                    to="/dashboard/profile"
+                    aria-label={`${user.name} — profile settings`}
+                    title="Profile settings"
+                    className="flex items-center gap-2 rounded-full p-0.5 pr-2 hover:bg-stone-100 focus-visible:outline-none"
+                  >
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt=""
+                        className="h-8 w-8 rounded-full object-cover ring-1 ring-stone-300"
+                      />
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-800"
+                      >
+                        {user.name?.charAt(0).toUpperCase() ?? '?'}
+                      </span>
+                    )}
+                    <span className="hidden text-sm font-medium text-stone-700 sm:inline">
+                      {user.name}
+                    </span>
+                  </Link>
                   <button
                     type="button"
                     onClick={handleLogout}

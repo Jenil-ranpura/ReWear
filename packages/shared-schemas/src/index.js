@@ -46,3 +46,4 @@ export {
   adminUsersQuerySchema,
   adminBanSchema,
 } from './admin.js';
+export { profileUpdateSchema, PROFILE_EDITABLE_FIELDS } from './users.js';

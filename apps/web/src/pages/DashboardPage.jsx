@@ -27,6 +27,13 @@ export default function DashboardPage() {
         <p className="mt-1 text-stone-500">
           {user?.location ? `${user.location} · ` : ''}Member of the ReWear community
         </p>
+        <Link
+          to="/dashboard/profile"
+          data-testid="edit-profile-link"
+          className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline"
+        >
+          Edit profile →
+        </Link>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
