@@ -16,9 +16,30 @@ vi.mock('../src/lib/api/auth.js', () => ({
   logout: vi.fn(),
 }));
 
+/** HomePage now hosts the featured carousel (a useQuery consumer). */
+function renderWithQueryClient(ui) {
+  return render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      {ui}
+    </QueryClientProvider>
+  );
+}
+
 describe('frontend shell (P1-T5)', () => {
   it('renders the landing hero with working CTAs', () => {
-    render(
+    // The carousel's fetch would 404 under the default jsdom fetch — fine:
+    // the carousel self-hides on error, and the hero is the assert target.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: { code: 'NOT_FOUND', message: 'no route' } }),
+      }))
+    );
+    renderWithQueryClient(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
