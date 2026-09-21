@@ -159,7 +159,7 @@ export default function ProfileSettingsPage() {
         )}
 
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-stone-700">
+          <label htmlFor="name" className="block text-sm font-semibold text-ink">
             Name
           </label>
           <input
@@ -174,8 +174,8 @@ export default function ProfileSettingsPage() {
         </div>
 
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-stone-700">
-            Phone <span className="font-normal text-stone-500">(optional)</span>
+          <label htmlFor="phone" className="block text-sm font-semibold text-ink">
+            Phone <span className="font-normal text-stone-450">(optional)</span>
           </label>
           <input
             id="phone"
@@ -197,12 +197,12 @@ export default function ProfileSettingsPage() {
           <p className="text-xs text-stone-450">Leave blank to keep your current password.</p>
 
           <div className="mt-3">
-            <label htmlFor="currentPassword" className="block text-sm font-medium text-stone-700">
+            <label htmlFor="currentPassword" className="block text-sm font-semibold text-ink">
               Current password{' '}
               {newPassword ? (
-                <span className="text-red-600">*</span>
+                <span className="text-status-red">*</span>
               ) : (
-                <span className="font-normal text-stone-500">(only if changing)</span>
+                <span className="font-normal text-stone-450">(only if changing)</span>
               )}
             </label>
             <input
@@ -219,7 +219,7 @@ export default function ProfileSettingsPage() {
           </div>
 
           <div className="mt-4">
-            <label htmlFor="password" className="block text-sm font-medium text-stone-700">
+            <label htmlFor="password" className="block text-sm font-semibold text-ink">
               New password
             </label>
             <input

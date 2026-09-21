@@ -65,10 +65,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-8 space-y-5">
           {serverError && (
-            <p
-              role="alert"
-              className="rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red"
-            >
+            <p role="alert" className="rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red">
               {serverError}
             </p>
           )}
@@ -114,10 +111,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-ink-2">
           New to ReWear?{' '}
-          <Link
-            to="/register"
-            className="link-underline font-semibold text-brand-700"
-          >
+          <Link to="/register" className="link-underline font-semibold text-brand-700">
             Create an account
           </Link>
         </p>

@@ -85,9 +85,7 @@ export default function HomePage() {
           {STEPS.map((step, i) => (
             <Reveal key={step.title} delay={i * 80}>
               <li className="border-t-2 border-brand-700 pt-5">
-                <span className="tabular font-display text-3xl text-brand-700">
-                  0{i + 1}
-                </span>
+                <span className="tabular font-display text-3xl text-brand-700">0{i + 1}</span>
                 <h3 className="mt-2 text-lg font-semibold tracking-tight text-ink">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink-2">{step.body}</p>
               </li>
@@ -162,8 +160,8 @@ export default function HomePage() {
               The most sustainable garment is the one already in your wardrobe.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/75">
-              ReWear exists to keep wearable clothing in circulation — swapped, not shipped;
-              earned, not bought.
+              ReWear exists to keep wearable clothing in circulation — swapped, not shipped; earned,
+              not bought.
             </p>
           </div>
         </Reveal>

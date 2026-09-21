@@ -20,7 +20,9 @@ const TYPE_LABEL = { EARNED: 'Earned', SPENT: 'Spent', ADJUSTED: 'Adjusted' };
 function Amount({ value }) {
   const positive = value > 0;
   return (
-    <span className={`tabular text-sm font-semibold ${positive ? 'text-brand-700' : 'text-status-red'}`}>
+    <span
+      className={`tabular text-sm font-semibold ${positive ? 'text-brand-700' : 'text-status-red'}`}
+    >
       {positive ? '+' : ''}
       {value} pts
     </span>

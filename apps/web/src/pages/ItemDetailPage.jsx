@@ -242,7 +242,13 @@ function Gallery({ images, title }) {
                 i === activeIndex ? 'ring-brand-700' : 'ring-transparent hover:ring-ink/20'
               }`}
             >
-              <img src={img.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              <img
+                src={img.url}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             </button>
           ))}
         </div>
@@ -320,7 +326,10 @@ export default function ItemDetailPage() {
                     <Spec label="Category" value={item.category} />
                     <Spec label="Type" value={item.type} />
                     <Spec label="Size" value={item.size} />
-                    <Spec label="Condition" value={item.condition?.replace('_', ' ').toLowerCase()} />
+                    <Spec
+                      label="Condition"
+                      value={item.condition?.replace('_', ' ').toLowerCase()}
+                    />
                   </dl>
 
                   <div>

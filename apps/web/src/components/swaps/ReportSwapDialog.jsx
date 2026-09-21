@@ -134,12 +134,12 @@ export default function ReportSwapDialog({ open, onClose, swapRequest, viewerId 
       onClose={onClose}
     >
       {error && (
-        <p role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mb-3 rounded-[6px] bg-red-50 px-3 py-2 text-sm text-status-red">
           {error}
         </p>
       )}
-      <p className="text-sm text-stone-600">{intro}</p>
-      <p className="mt-1 text-sm text-stone-600">
+      <p className="text-sm text-ink-2">{intro}</p>
+      <p className="mt-1 text-sm text-ink-2">
         Tell us what went wrong. An admin will review both sides and the points history — decisions
         are never automated.
       </p>
@@ -149,7 +149,7 @@ export default function ReportSwapDialog({ open, onClose, swapRequest, viewerId 
         {reasons.map(({ value, label, hint }) => (
           <label
             key={value}
-            className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-stone-200 p-2 text-sm hover:bg-stone-50"
+            className="flex cursor-pointer items-start gap-2.5 rounded-[6px] p-2 text-sm ring-1 ring-hairline transition-colors hover:bg-brand-50/60"
           >
             <input
               type="radio"
@@ -168,8 +168,8 @@ export default function ReportSwapDialog({ open, onClose, swapRequest, viewerId 
       </fieldset>
 
       <div className="mt-3">
-        <label htmlFor="report-details" className="block text-sm font-medium text-stone-700">
-          Details <span className="font-normal text-stone-500">(optional)</span>
+        <label htmlFor="report-details" className="block text-sm font-semibold text-ink">
+          Details <span className="font-normal text-stone-450">(optional)</span>
         </label>
         <textarea
           id="report-details"
@@ -178,7 +178,7 @@ export default function ReportSwapDialog({ open, onClose, swapRequest, viewerId 
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           placeholder="What happened? Numbers, times, anything that helps."
-          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+          className="field mt-1"
         />
       </div>
     </ConfirmDialog>

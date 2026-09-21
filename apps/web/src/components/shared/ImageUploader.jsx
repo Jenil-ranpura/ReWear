@@ -100,18 +100,18 @@ export default function ImageUploader({ images, onChange, onError, disabled = fa
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={disabled || uploading}
-        className="w-full rounded-xl border-2 border-dashed border-stone-300 px-4 py-8 text-center transition hover:border-brand-500 hover:bg-brand-50/40 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-[10px] border border-dashed border-stone-450/60 bg-white px-4 py-8 text-center transition-colors hover:border-brand-500 hover:bg-brand-50/40 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span className="block font-semibold text-stone-700">
+        <span className="block font-semibold text-ink">
           {uploading ? 'Uploading…' : 'Add photos'}
         </span>
-        <span className="mt-1 block text-sm text-stone-500">
+        <span className="mt-1 block text-sm text-ink-2">
           JPEG, PNG, or WebP · up to 5MB each · {images.length}/{MAX_FILES} used
         </span>
       </button>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-[6px] bg-red-50 px-3 py-2 text-sm text-status-red">
           {error}
         </p>
       )}
@@ -121,9 +121,9 @@ export default function ImageUploader({ images, onChange, onError, disabled = fa
           {images.map((img, i) => (
             <li
               key={`${img.url}-${i}`}
-              className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-stone-200"
+              className="overflow-hidden rounded-[6px] bg-white ring-1 ring-hairline"
             >
-              <div className="relative aspect-square bg-stone-100">
+              <div className="relative aspect-square bg-canvas">
                 <img
                   src={img.url}
                   alt={`Photo ${i + 1} of ${images.length}`}
@@ -150,7 +150,7 @@ export default function ImageUploader({ images, onChange, onError, disabled = fa
                   onClick={() => removeAt(i)}
                   disabled={disabled || uploading}
                   aria-label={`Remove photo ${i + 1}`}
-                  className="rounded px-1.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40"
+                  className="rounded px-1.5 py-1 text-xs font-medium text-status-red hover:bg-red-50 disabled:opacity-40"
                 >
                   Remove
                 </button>

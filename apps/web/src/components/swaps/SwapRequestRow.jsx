@@ -22,6 +22,9 @@
  * ({_id, name, avatarUrl}) and itemId/offeredItemId populated with title,
  * status, pointValue, size, condition, images.url (Session 14 API change).
  * Defensive fallbacks keep older/unpopulated rows rendering as plain links.
+ *
+ * Visual redesign: token system — hairline cards, tabular spec numerals,
+ * pressable buttons. All testids, summaries, and action contracts unchanged.
  */
 
 import { useState } from 'react';
@@ -40,22 +43,28 @@ function ItemCard({ item, tone }) {
     <Link
       to={`/items/${item._id}`}
       data-testid="swap-item-card"
-      className="flex min-w-0 items-center gap-2.5 rounded-lg bg-white p-2 ring-1 ring-stone-200 transition hover:ring-brand-300"
+      className="flex min-w-0 items-center gap-2.5 rounded-[6px] bg-white p-2 ring-1 ring-hairline transition hover:ring-brand-300"
     >
       {item.images?.[0]?.url ? (
-        <img src={item.images[0].url} alt="" className="h-11 w-11 shrink-0 rounded object-cover" />
+        <img
+          src={item.images[0].url}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-11 w-11 shrink-0 rounded object-cover"
+        />
       ) : (
-        <span className="h-11 w-11 shrink-0 rounded bg-stone-100" aria-hidden="true" />
+        <span className="h-11 w-11 shrink-0 rounded bg-canvas" aria-hidden="true" />
       )}
       <span className="min-w-0">
         <span
           className={`block truncate text-sm font-semibold ${
-            tone === 'muted' ? 'text-stone-600' : 'text-stone-900'
+            tone === 'muted' ? 'text-ink-2' : 'text-ink'
           }`}
         >
           {item.title}
         </span>
-        <span className="block truncate text-xs text-stone-500">
+        <span className="tabular block truncate text-xs text-ink-2">
           {[spec, item.pointValue != null ? `${item.pointValue} pts` : null]
             .filter(Boolean)
             .join(' · ')}
@@ -72,7 +81,7 @@ function PersonBubble({ name, avatarUrl }) {
   ) : (
     <span
       aria-hidden="true"
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tint text-xs font-bold text-brand-700"
     >
       {(name ?? '?').trim().charAt(0).toUpperCase()}
     </span>
@@ -107,8 +116,8 @@ export default function SwapRequestRow({ request, direction, onAction, isNew = f
       : `You asked to redeem “${target?.title ?? 'their item'}” for ${target?.pointValue ?? '—'} pts`;
   return (
     <li
-      className={`rounded-xl p-4 shadow-sm ring-1 ${
-        highlight ? 'bg-brand-50 ring-2 ring-brand-400' : 'bg-stone-50 ring-1 ring-stone-200'
+      className={`rounded-[10px] p-4 ring-1 ${
+        highlight ? 'bg-brand-50 ring-2 ring-brand-400' : 'bg-white ring-hairline'
       }`}
       data-testid="swap-request-row"
       data-highlighted={highlight || undefined}
@@ -121,7 +130,7 @@ export default function SwapRequestRow({ request, direction, onAction, isNew = f
               name={requesterName}
               avatarUrl={typeof requester === 'object' ? requester?.avatarUrl : null}
             />
-            <span className="text-sm font-semibold text-stone-800">
+            <span className="text-sm font-semibold text-ink">
               {isIncoming ? (requesterName ?? 'A user') : 'You'}
             </span>
             {highlight && (
@@ -138,13 +147,13 @@ export default function SwapRequestRow({ request, direction, onAction, isNew = f
                 {new Date(request.createdAt).toLocaleDateString()}
               </span>
             )}
-            <span className="rounded-full bg-stone-200/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-600">
+            <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-2 ring-1 ring-hairline">
               {isDirect ? 'Direct swap' : 'Points redemption'}
             </span>
           </div>
 
           {/* Line 2 — the plain-language sentence (§5.9). */}
-          <p className="text-sm text-stone-700" data-testid="swap-summary">
+          <p className="text-sm text-ink" data-testid="swap-summary">
             {summary}
           </p>
 
@@ -167,7 +176,7 @@ export default function SwapRequestRow({ request, direction, onAction, isNew = f
           {request.contact && (
             <div
               data-testid="swap-contact-card"
-              className="rounded-lg bg-white p-3 ring-1 ring-brand-200"
+              className="rounded-[6px] bg-tint p-3 ring-1 ring-brand-200"
             >
               <p className="text-xs font-bold uppercase tracking-wide text-brand-700">
                 Swap accepted — reach {request.contact.name ?? 'them'}
@@ -199,14 +208,14 @@ export default function SwapRequestRow({ request, direction, onAction, isNew = f
                 <button
                   type="button"
                   onClick={() => onAction?.(request, 'ACCEPT')}
-                  className="rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-800"
+                  className="pressable rounded-[6px] bg-brand-700 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
                 >
                   Accept
                 </button>
                 <button
                   type="button"
                   onClick={() => onAction?.(request, 'REJECT')}
-                  className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+                  className="pressable rounded-[6px] bg-white px-3 py-1.5 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
                 >
                   Reject
                 </button>
@@ -215,7 +224,7 @@ export default function SwapRequestRow({ request, direction, onAction, isNew = f
               <button
                 type="button"
                 onClick={() => onAction?.(request, 'CANCEL')}
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                className="pressable rounded-[6px] px-3 py-1.5 text-sm font-semibold text-status-red transition-colors hover:bg-red-50"
               >
                 Cancel
               </button>
@@ -230,7 +239,7 @@ export default function SwapRequestRow({ request, direction, onAction, isNew = f
             <button
               type="button"
               onClick={() => setReporting(true)}
-              className="rounded-lg px-3 py-1.5 text-sm font-semibold text-stone-500 ring-1 ring-stone-300 hover:bg-stone-100 hover:text-stone-700"
+              className="pressable rounded-[6px] px-3 py-1.5 text-sm font-semibold text-ink-2 ring-1 ring-hairline transition-colors hover:bg-canvas hover:text-ink"
             >
               Report a problem
             </button>

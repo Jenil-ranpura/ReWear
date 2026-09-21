@@ -87,20 +87,18 @@ export default function SwapRequestDialog({ open, onClose, onCreated, item, type
       onClose={onClose}
     >
       {error && (
-        <p role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mb-3 rounded-[6px] bg-red-50 px-3 py-2 text-sm text-status-red">
           {error}
         </p>
       )}
 
       {isDirect ? (
         <div>
-          <p className="text-sm text-stone-600">
-            Pick one of your items to offer for “{item?.title}”.
-          </p>
+          <p className="text-sm text-ink-2">Pick one of your items to offer for “{item?.title}”.</p>
           {myItemsQuery.isLoading ? (
-            <p className="mt-3 text-sm text-stone-500">Loading your items…</p>
+            <p className="mt-3 text-sm text-stone-450">Loading your items…</p>
           ) : offerableItems.length === 0 ? (
-            <p className="mt-3 text-sm text-stone-500">
+            <p className="mt-3 text-sm text-ink-2">
               You have no approved items to offer. Items must be approved by a moderator before they
               can be swapped.
             </p>
@@ -108,7 +106,7 @@ export default function SwapRequestDialog({ open, onClose, onCreated, item, type
             <ul className="mt-3 max-h-60 space-y-2 overflow-y-auto pr-1">
               {offerableItems.map((offer) => (
                 <li key={offer._id}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-200 p-2 hover:bg-stone-50">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-[6px] p-2 ring-1 ring-hairline transition-colors hover:bg-brand-50/60">
                     <input
                       type="radio"
                       name="offered-item"
@@ -124,18 +122,18 @@ export default function SwapRequestDialog({ open, onClose, onCreated, item, type
                         className="h-10 w-10 rounded object-cover"
                       />
                     ) : (
-                      <span className="h-10 w-10 rounded bg-stone-100" aria-hidden="true" />
+                      <span className="h-10 w-10 rounded bg-canvas" aria-hidden="true" />
                     )}
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-stone-900">
+                      <span className="block truncate text-sm font-medium text-ink">
                         {offer.title}
                       </span>
-                      <span className="block text-xs text-stone-500">
+                      <span className="tabular block text-xs text-ink-2">
                         {[offer.size, offer.condition].filter(Boolean).join(' · ')}
                       </span>
                     </span>
                     {offer.pointValue != null && (
-                      <span className="shrink-0 text-xs font-bold text-brand-700">
+                      <span className="tabular shrink-0 text-xs font-bold text-brand-700">
                         {offer.pointValue} pts
                       </span>
                     )}
@@ -146,7 +144,7 @@ export default function SwapRequestDialog({ open, onClose, onCreated, item, type
           )}
         </div>
       ) : (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-ink-2">
           This will request “{item?.title}” for{' '}
           <strong className="text-brand-700">{item?.pointValue} points</strong>. You currently have{' '}
           <strong>{viewer?.pointsBalance ?? 0}</strong>.
@@ -157,8 +155,8 @@ export default function SwapRequestDialog({ open, onClose, onCreated, item, type
           exchange — the owner sees it only if they accept (§ swapService).
           Shared across both request types; same validation rules as the API. */}
       <div className="mt-3">
-        <label htmlFor="requester-phone" className="block text-sm font-medium text-stone-700">
-          Your phone <span className="font-normal text-stone-500">(optional)</span>
+        <label htmlFor="requester-phone" className="block text-sm font-semibold text-ink">
+          Your phone <span className="font-normal text-stone-450">(optional)</span>
         </label>
         <input
           id="requester-phone"
@@ -167,7 +165,7 @@ export default function SwapRequestDialog({ open, onClose, onCreated, item, type
           onChange={(e) => setRequesterPhone(e.target.value)}
           placeholder="+91 98765 43210"
           autoComplete="tel"
-          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
+          className="field mt-1"
         />
         <p className="mt-1 text-xs text-stone-450">
           Include country code. Shared with them only if they accept.

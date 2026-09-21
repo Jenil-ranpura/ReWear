@@ -103,11 +103,11 @@ const CONDITION_LABELS = {
 function Field({ id, label, error, children }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-stone-700">
+      <label htmlFor={id} className="block text-sm font-semibold text-ink">
         {label}
       </label>
       {children}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-status-red">{error}</p>}
     </div>
   );
 }
@@ -644,7 +644,7 @@ export default function ItemFormPage() {
               >
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="text-stone-500">
+                    <tr className="text-stone-450">
                       <th className="px-3 py-1.5 font-medium">Category</th>
                       <th className="px-3 py-1.5 font-medium">Base pts</th>
                       {ITEM_CONDITION.map((c) => (
@@ -660,7 +660,7 @@ export default function ItemFormPage() {
                   </thead>
                   <tbody>
                     {ITEM_CATEGORIES.map((cat) => (
-                      <tr key={cat} className="border-t border-stone-200 text-stone-700">
+                      <tr className="border-t border-hairline text-ink-2">
                         <td className="px-3 py-1.5 font-medium">{cat}</td>
                         <td className="px-3 py-1.5">{BASE_POINTS[cat]}</td>
                         {ITEM_CONDITION.map((cond) => (

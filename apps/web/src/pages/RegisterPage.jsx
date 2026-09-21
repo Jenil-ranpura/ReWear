@@ -78,7 +78,13 @@ export default function RegisterPage() {
             <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-ink">
               Name
             </label>
-            <input id="name" type="text" autoComplete="name" {...registerField('name')} className="field" />
+            <input
+              id="name"
+              type="text"
+              autoComplete="name"
+              {...registerField('name')}
+              className="field"
+            />
             {errors.name && <p className="mt-1 text-sm text-status-red">{errors.name.message}</p>}
           </div>
 
@@ -86,7 +92,13 @@ export default function RegisterPage() {
             <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink">
               Email
             </label>
-            <input id="email" type="email" autoComplete="email" {...registerField('email')} className="field" />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              {...registerField('email')}
+              className="field"
+            />
             {errors.email && <p className="mt-1 text-sm text-status-red">{errors.email.message}</p>}
           </div>
 
