@@ -2,6 +2,8 @@
 
 **Purpose:** paste this document into any AI chat (ChatGPT / Claude) as the authoritative primer for the ReWear codebase. It describes the app exactly as it is today, the locked-in constraints, every data model and endpoint, the shipped features, and the conventions any new code must follow.
 
+**Last synced with code:** 2026-09-22 — featured carousel ACTUALLY shipped (latest-4 design), fixed session window documented, admin moderator-only nav contract, saved-items/location-filter drift corrected (§16).
+
 ---
 
 ## 1. What ReWear is
@@ -56,9 +58,11 @@ rewear/
 │   │   └── tests/                # unit + integration (mongodb-memory-server replset)
 │   └── web/                      # React 18 + Vite + Tailwind CSS v4
 │       ├── src/{pages,components,hooks,lib,state,styles}
-│       ├── e2e/journey.spec.js   # Playwright E2E journey
-│       ├── playwright.config.mjs # boots full stack (API :4000 + Vite :5173 with /api proxy)
-│       └── tests/                # Vitest + React Testing Library
+│       ├── e2e/journey.spec.js        # Playwright E2E journey (full real stack)
+│       ├── e2e/session-expiry.spec.js # fixed-session-window E2E (isolated short-TTL stack)
+│       ├── playwright.config.mjs      # journey: API :4000 + Vite :5173 (/api proxy)
+│       ├── playwright.session-expiry.config.mjs # expiry: API :4001 + Vite :5174, SESSION_TTL_MINUTES=0.2
+│       └── tests/                     # Vitest + React Testing Library
 ├── packages/shared-schemas/      # Yup schemas + status enums + pointsFormula — shared web↔api, single source of truth
 ├── implementation.md             # spec (what should be built)
 ├── progress.md                   # living execution log (what was built, decisions, gotchas)
@@ -74,7 +78,7 @@ npm install              # at root — installs all three workspaces
 npm run dev              # API (:4000) + web (:5173) in parallel
 npm test                 # API: Jest + Supertest + mongodb-memory-server
 npm run test:web         # Web: Vitest + RTL
-npm run test:e2e:session # Playwright E2E journey (full stack; upsert-only fixtures)
+npm run test:e2e:session # Playwright session-expiry E2E (own short-TTL stack; journey = apps/web `npm run test:e2e`)
 npm run seed             # deterministic dev-DB seed (prod-safe)
 npm run lint             # ESLint, all workspaces
 npm run format:check     # Prettier
@@ -91,8 +95,9 @@ Health check: `GET http://localhost:4000/health` → `{"status":"ok","db":"conne
 ```js
 { name, email (unique index), passwordHash (select: false), avatarUrl?, location?,
   phone? /* optional, signup-volunteered, E.164 */,
-  role: 'USER'|'ADMIN' (default USER), pointsBalance /* denormalized cache */,
-  isBanned: false, refreshTokenHash (select: false), createdAt, updatedAt }
+  role: 'USER'|'ADMIN' (default USER), pointsBalance /* denormalized cache; schema default 25 — see §6 */,
+  isBanned: false, refreshTokenHash (select: false), sessionExpiresAt /* absolute window deadline — see §7 */,
+  createdAt, updatedAt }
 ```
 
 ### `items`
@@ -154,13 +159,14 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 - Lives in `packages/shared-schemas/src/pointsFormula.js` (api re-exports it) — the UI grid and the server's computation can never drift.
 - **`pointValue` is never user-settable**: the service derives it via `computeSuggestedPoints(category, condition)` on create and on category/condition change; a client-smuggled value is stripped/ignored (schema fail-closed transform), NOT errored. The form field is read-only with an explanatory hint.
 - **Invariant (test-enforced):** `users.pointsBalance` is a cache and must ALWAYS equal `Σ pointstransactions.amount` for the user. Every balance change writes a ledger doc **in the same transaction**. `lib/reconcilePoints.js` is session-aware and used in tests/scripts.
-- New users start at 0 points. There is no top-up endpoint (no payments by design) — the seed funds the demo user.
+- New users start at a schema-default **25 points** (user decision, commit "changing the default coins"). KNOWN DIVERGENCE: the grant is NOT ledger-backed — registration writes no EARNED doc, so a freshly registered user's cache ≠ Σ ledger until their first transaction; reconcile at P10 (write the grant as a ledger doc) or accept and document. There is no top-up endpoint (no payments by design) — the seed funds the demo user.
 
 ---
 
 ## 7. Authentication & security model
 
-- **JWT access token** (15 min, `{ userId, role }`) + **opaque refresh token** (7 days) delivered as httpOnly `sameSite=strict` cookie scoped to `/api/v1/auth`, stored **only as SHA-256 hash** (`users.refreshTokenHash`, `select: false`), **rotated on every refresh** → replaying a rotated cookie gets 401 (reuse detection for free).
+- **JWT access token** (15 min default, `{ userId, role }`) + **opaque refresh token** delivered as httpOnly `sameSite=strict` cookie scoped to `/api/v1/auth`, stored **only as SHA-256 hash** (`users.refreshTokenHash`, `select: false`), **rotated on every refresh** → replaying a rotated cookie gets 401 (reuse detection for free).
+- **Fixed session window (user request):** `SESSION_TTL_MINUTES` (default 15, fractional allowed for e2e) — login/register stamps an ABSOLUTE `users.sessionExpiresAt`; refresh rotates the token but NEVER extends the deadline. When it passes, refresh and every protected route reject → instant auto-logout. The client mirrors the deadline: AuthContext arms a local timer (+250ms grace) and a refresh-401 fires `SESSION_EXPIRED_EVENT` — both paths converge on the same local sign-out. Dedicated E2E: `npm run test:e2e:session`.
 - Passwords: bcrypt (cost 10–12). `passwordHash` is `select: false` and stripped by `toSafeUser`. Never logged, never in responses.
 - `requireAuth` **re-fetches the user from DB on every request** → bans/deletions/role changes enforce instantly on still-valid tokens.
 - `requireAdmin` checks `req.user.role === 'ADMIN'` (403 FORBIDDEN), mounted after `requireAuth`.
@@ -218,12 +224,10 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 | GET | `/auth/me` | access | safe user |
 | POST | `/items` | user | multipart/upload-first; status forced PENDING; pointValue derived |
 | POST | `/items/classify` | user | ownership-scoped; advisory-only; 10/min/user limiter |
-| GET | `/items` | public | filters: `category, size, condition, tags, q, location, page, pageSize`; non-owners forced APPROVED; `location` resolves owner-ids (case-insensitive contains, regex-escaped, plain-array `$in`) |
+| GET | `/items` | public | filters: `category, size, condition, tags, q, page, pageSize`; non-owners forced APPROVED |
 | GET | `/items/:id` | public if APPROVED / owner+admin any | owner attached as separate `owner` field (public fields only: name, avatarUrl, location, createdAt) |
 | PATCH | `/items/:id` | owner | only PENDING/APPROVED and no active swap |
 | DELETE | `/items/:id` | owner | soft delete → REMOVED; 409 with active swap |
-| POST | `/items/:id/save` | user | **saved items** — adds to `savedItemIds` (idempotent; 409 past cap; item must be APPROVED) |
-| DELETE | `/items/:id/save` | user | removes from saved (idempotent) |
 | POST | `/items/:id/swap-requests` | user | `{ type, offeredItemId?, requesterPhone? }` |
 | GET | `/swap-requests?direction=incoming\|outgoing` | user | enriched payload (requester name+avatar; item size/condition/thumbnail) — one call, no N+1 |
 | GET | `/swap-requests/:id` | participant or admin | 403 for non-participants |
@@ -231,7 +235,6 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 | POST | `/swap-requests/:id/report` | participant | accepted-only; one per reporter |
 | GET | `/users/me/items` | user | ALL statuses (owner manages their PENDING/REJECTED too) |
 | GET | `/users/me/points/history` | user | paginated ledger |
-| GET | `/users/me/saved` | user | hydrated saved items (APPROVED only; auto-prunes REMOVED) |
 | PATCH | `/users/me` | user | **editable profile** — name, optional phone (E.164-validated, '' clears), OPTIONAL password change gated on `currentPassword` re-auth (403 INVALID_CREDENTIALS when wrong); **USER-ONLY: admins get 403 FORBIDDEN (product decision — admins don't self-serve a profile)**; write-limited; shared `profileUpdateSchema`; field whitelist (`PROFILE_EDITABLE_FIELDS`) so role/points/email can never ride in; unknown keys stripped |
 | GET | `/admin/items/pending` | admin | moderation queue (duplicate-flag badge via moderationReason) |
 | GET | `/admin/items?status=APPROVED\|REMOVED&q=` | admin | **live-monitoring list** — what is publicly visible RIGHT NOW (default APPROVED, newest first) + the REMOVED takedown trail; q searches titles within the selected status |
@@ -248,11 +251,11 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 
 **Stack:** React 18 + Vite, Tailwind CSS v4 (CSS-first tokens in `styles/index.css`), React Router, TanStack Query (all server state), React Hook Form + the SAME shared Yup schemas the API uses, AuthContext (strict-context convention).
 
-**Routes:** `/` · `/login` · `/register` · `/items` · `/items/:id` · `/items/new` · `/items/:id/edit` · `/dashboard` · `/dashboard/profile` · `/dashboard/items` · `/dashboard/swaps` · `/dashboard/points` · `/dashboard/saved` · `/admin` (≡ `/admin/items/pending`) · `/admin/users` · `/admin/users/:id` · `/admin/reports` · 404 / 403 pages. Route guards redirect unauthenticated users to `/login`; non-admins on admin routes get the Forbidden page.
+**Routes:** `/` · `/login` · `/register` · `/items` · `/items/:id` · `/items/new` · `/items/:id/edit` · `/dashboard` · `/dashboard/profile` · `/dashboard/items` · `/dashboard/swaps` · `/dashboard/points` · `/admin` (≡ `/admin/items/pending`) · `/admin/live` · `/admin/users` · `/admin/users/:id` · `/admin/reports` · 404 / 403 pages. Route guards redirect unauthenticated users to `/login`; non-admins on admin routes get the Forbidden page.
 
-**Pages:** HomePage (hero + CTAs + **featured items carousel**) · BrowsePage (URL-driven filters: category chips, size, condition, tags, **debounced search-as-you-type 300ms**, location filter, pagination; aria-live result counts) · ItemDetailPage (gallery, uploader info, availability, SwapRequestDialog) · ItemFormPage (add/edit: upload-first ImageUploader, AI suggestion prefill with inline loading + "AI suggested" tags — never locked, category dropdown (canonical enum), live point recalc on category/condition change, readOnly pointValue with hint, tags parsed from comma input, delete lives on the edit page) · DashboardPage (profile summary incl. **inline profile editing**, points balance, items overview, swaps card with NEW chip) · MyItemsPage · MySwapsPage (incoming/outgoing tabs, self-explanatory SwapRequestRow cards with plain-language summary sentences, NEW highlights, accepted-only contact card, confirm dialogs) · PointsHistoryPage (paginated ledger) · **SavedItemsPage** (`/dashboard/saved` — ItemCard grid of saved items, empty state with Browse CTA) · AdminQueuePage · AdminUsersPage · AdminUserDetailPage · AdminReportsPage · Login/Register (optional phone with consent hint) · NotFound/Forbidden.
+**Pages:** HomePage (hero + CTAs + **featured items carousel** — SHIPPED, see `FeaturedCarousel` below) · BrowsePage (URL-driven filters: category chips, size, condition, tags, **debounced search-as-you-type 300ms**, pagination; aria-live result counts) · ItemDetailPage (gallery, uploader info, availability, SwapRequestDialog) · ItemFormPage (add/edit: upload-first ImageUploader, AI suggestion prefill with inline loading + "AI suggested" tags — never locked, category dropdown (canonical enum), live point recalc on category/condition change, readOnly pointValue with hint, tags parsed from comma input, delete lives on the edit page) · DashboardPage (profile summary incl. **inline profile editing**, points balance, items overview, swaps card with NEW chip) · MyItemsPage · MySwapsPage (incoming/outgoing tabs, self-explanatory SwapRequestRow cards with plain-language summary sentences, NEW highlights, accepted-only contact card, confirm dialogs) · PointsHistoryPage (paginated ledger) · AdminQueuePage · AdminLiveItemsPage · AdminUsersPage · AdminUserDetailPage · AdminReportsPage · Login/Register (optional phone with consent hint) · NotFound/Forbidden.
 
-**Key components:** `Layout` (skip link, nav with points chip + ambient NEW-swaps badge + admin link ADMIN-only, ToastProvider mount, SwapArrivalWatcher) · `ItemCard` (**heart save-toggle**, optimistic) · `StatusBadge` · `SwapRequestDialog` (offer picker filtered to APPROVED own items, optional phone field client-validated with the shared validator, confirm disabled until valid) · `SwapRequestRow` · `ConfirmDialog` (focus trap + focus restore + `confirmDisabled` + `wide`/`hideActions` modes with a ✕ close affordance + aria-busy/describedby) · `AsyncBoundary` (loading/empty/error on EVERY data view; skeleton semantics role=status + aria-live=polite) · `Pagination` · `ToastProvider`/`useToast` (single viewport, aria pattern, injectable ttl, outcome copy in plain language) · `ItemDetailsDialog` (admin read-only item inspection on `ConfirmDialog wide hideActions`; deliberately action-free so a reading mistake can't fire a mutation) · `ReportSwapDialog` · `ImageUploader` · `FeaturedCarousel` (auto-rotating ~5s, pause on hover/focus, arrows + dots, swipe on mobile, `aria-roledescription="carousel"`, honors `prefers-reduced-motion`, skeleton while loading, section hidden when no approved items) · `ProfileSettingsPage` (`/dashboard/profile` — RHF resolving the shared `profileUpdateSchema`; edits name/phone + password change behind a re-auth gate; 403 INVALID_CREDENTIALS maps onto the currentPassword field; success merges the returned safe user into AuthContext via `updateUser` + toast; pristine-form resync uses a synchronous `getValues()` check — NOT `formState.isDirty`, whose async subject stream can wipe fresh keystrokes).
+**Key components:** `Layout` (skip link, nav with points chip + ambient NEW-swaps badge — both USER-only per the moderator-only contract; admins get Browse · Admin · static name · Logout — ToastProvider mount, SwapArrivalWatcher) · `ItemCard` (photo-first card, primary-image pick, points chip, no-photo fallback) · `StatusBadge` · `SwapRequestDialog` (offer picker filtered to APPROVED own items, optional phone field client-validated with the shared validator, confirm disabled until valid) · `SwapRequestRow` · `ConfirmDialog` (focus trap + focus restore + `confirmDisabled` + `wide`/`hideActions` modes with a ✕ close affordance + aria-busy/describedby) · `AsyncBoundary` (loading/empty/error on EVERY data view; skeleton semantics role=status + aria-live=polite) · `Pagination` · `ToastProvider`/`useToast` (single viewport, aria pattern, injectable ttl, outcome copy in plain language) · `ItemDetailsDialog` (admin read-only item inspection on `ConfirmDialog wide hideActions`; deliberately action-free so a reading mistake can't fire a mutation) · `ReportSwapDialog` · `ImageUploader` · `FeaturedCarousel` (SHIPPED: latest-4 APPROVED items via the public browse endpoint `?page=1&pageSize=4`, zero backend changes; scroll-snap track of real `ItemCard`s, native touch swipe; auto-advance ~5s paused on hover/focus-within, never armed under `prefers-reduced-motion`; OVERFLOW-AWARE controls — track measured in `useLayoutEffect` + re-measured on resize, arrows/dots render only when cards overflow, so desktop's single static row has no inert chrome; skeleton while loading; renders `null` on empty or error; optimistic `setActiveIndex` before `scrollTo` because jsdom/legacy browsers lack `Element.scrollTo`; tests in `featuredCarousel.test.jsx`) · `ProfileSettingsPage` (`/dashboard/profile` — RHF resolving the shared `profileUpdateSchema`; edits name/phone + password change behind a re-auth gate; 403 INVALID_CREDENTIALS maps onto the currentPassword field; success merges the returned safe user into AuthContext via `updateUser` + toast; pristine-form resync uses a synchronous `getValues()` check — NOT `formState.isDirty`, whose async subject stream can wipe fresh keystrokes).
 
 **Hooks/libs:** `useNewSwapRequests` (ONE hook, two modes: AMBIENT navbar/dashboard badge with 60s poll + focus refetch — never writes seen-state; PAGE mode for MySwapsPage with visit-stable snapshot semantics) · `lib/seenRequests.js` (per-user localStorage seen-set, capped, fail-open) · `lib/chime.js` (two-note WebAudio, per-user mute persisted) · `lib/api/*` (one module per resource: auth, items, swaps, users, admin — components never call fetch directly).
 
@@ -266,7 +269,7 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 
 ### 12.1 From the problem statement
 - Email/password auth (register, login, refresh rotation, logout, protected routes)
-- Landing page: intro, three CTAs, **featured items carousel** of latest approved items
+- Landing page: intro, three CTAs, **featured items carousel** — SHIPPED: latest 4 approved items (overflow-aware controls; self-hides when nothing is approved)
 - User dashboard: profile details (**editable**), points balance, uploaded items overview, ongoing + completed swaps
 - Item detail: gallery, description, uploader info, Swap Request / Redeem via Points, availability status
 - Add item: image uploads + title/description/category/type/size/condition/tags
@@ -279,12 +282,12 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 - **Duplicate-image fraud flag** (perceptual hash → moderationReason pre-filled → admin-queue badge)
 - **Contact reveal + phone exchange** (accepted-only, both directions, E.164, junk-phone heuristics, scrub on death)
 - **Dispute/refund kit** (reports queue, human adjudication, ledger-reversing refund capped at recoverable balance)
-- **Location browse filter** (owner-location contains, URL-driven)
 - **Search-as-you-type** (300ms debounce, URL contract preserved)
 - **NEW-request highlights** (per-user localStorage seen-set) + **ambient navbar badge** + **arrival toast + chime** (baseline semantics: first data pass is never toasted)
 - **Unified toast system** for all outcomes
+- **Admin is MODERATOR-ONLY in the UI (user decision, mirrors the profile rule):** the navbar hides the points chip, the List-an-Item CTA, and the Dashboard link for ADMINs (participant affordances; ambient NEW-swap badge goes with Dashboard) — admins see Browse · Admin · static name · Logout. Tests pin this nav contract in `auth.test.jsx`. NOTE: UI-only today — the API does not yet 403 admins on `POST /items` or swap creation (server-side enforcement would mirror the profile rule's service-layer pattern).
 - **Editable profile (USER-ONLY)** — reached from the CLICKABLE NAVBAR PROFILE (avatar/initial + name → `/dashboard/profile`) and a dashboard "Edit profile" link; edits name, phone (E.164, '' clears), and password (currentPassword re-auth required); validated by the shared `profileUpdateSchema` on BOTH sides; AuthContext gained `updateUser` so the navbar reflects edits instantly. ADMINS are excluded end-to-end: the API 403s them at the service layer, the navbar renders their name as static text (no link), the dashboard hides the Edit link, and direct URL access renders ForbiddenPage — profile self-service is a marketplace-participant feature, and admins are moderators, not participants
-- **Saved items / wishlist** (heart toggle on cards + detail page with optimistic updates; `savedItemIds` capped embedded array on User; Saved tab on dashboard; auto-prunes removed items)
+- **Saved items / wishlist** — REMOVED (see §16)
 - Responsive pass (header wrap, toast viewport) + accessibility pass (contrast by math, focus traps, skip link, reduced-motion)
 - Per-user rate limiting on writes; separate classify bucket
 - **Playwright E2E journey** (full real-stack: register → list item with real image → admin approves → demo user redeems with phone → owner accepts → item gone from owner dashboard → contact card on accepted row → report surface present)
@@ -297,7 +300,7 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 - **Web:** Vitest + React Testing Library (excludes `e2e/**`).
 - **E2E:** Playwright, two `webServer` entries (API :4000 with upsert-only fixture script `scripts/e2e-ensure-fixtures.js` — NEVER drops/reseeds the dev DB; Vite :5173 with `/api` proxy so the refresh cookie is first-party).
 - **Key test-enforced invariants:** swap-accept concurrency (exactly one 200 + one 409) · ledger↔cache reconciliation · security index suite (IDOR read+write, token forgery with wrong secret, NoSQL-injection login, swap state smuggling) · enumeration resistance · contact reveal both directions + scrubbing · refund full-amount + capped reconciliation · 29-case phone validation matrix · admin route authz matrix.
-- **Full gate on every change:** `npm test` · `npm run test:web` · `npm run test:e2e:session` · `npm run lint` · `npm run format:check` · `npm run build` — all green (at Phase 8 close: API 229 / web 155 tests; the profile/saved/carousel features added their own suites on top — run the commands for current counts).
+- **Full gate on every change:** `npm test` · `npm run test:web` · `npm run test:e2e:session` · `npm run lint` · `npm run format:check` · `npm run build` — all green (at Phase 8 close: API 229 / web 155; web is now **208/208** after the admin-nav + featured-carousel additions — run the commands for current counts).
 - Test-timing lore: prefer `findBy*` over sync `getBy*`; React 18 schedules via MessageChannel so fake timers are unreliable for setState flushes — inject a short real ttl instead.
 
 ---
@@ -305,7 +308,7 @@ Indexes: `{ swapRequestId: 1, status: 1 }` (dedupe), `{ status: 1, createdAt: 1 
 ## 14. Seed & demo data
 
 - `npm run seed` — deterministic, re-runnable (drop-and-reseed the dev DB; refuses in production without `--force`).
-- Contents: 1 admin (placeholder credentials documented in `.env.example` comments), demo users with varying balances, `demo@rewear.test` **funded with 120 points via real EARNED ledger entries** (balance always reconciles), items across every category/condition with mixed statuses (PENDING for the admin queue, one REJECTED with reason, one SWAPPED), a few swap requests in various states, and **one intentionally duplicated image pair** to demo the fraud flag live.
+- Contents: 1 admin (placeholder credentials documented in `.env.example` comments), demo users with varying balances, `demo@rewear.test` **funded with 120 points via real EARNED ledger entries** (balance always reconciles), items across every category/condition with mixed statuses (PENDING for the admin queue, one REJECTED with reason, one SWAPPED), a few swap requests in various states, and **one intentionally duplicated image pair** to demo the fraud flag live. NOTE: the seed still gives the ADMIN one owned item — if the moderator-only participation rule is ever enforced server-side, move that item to a demo user.
 - E2E fixtures are upsert-only and create-only (timestamped identities) so reruns never wipe manual-testing data.
 
 ---
@@ -325,6 +328,8 @@ Secrets are never committed; `.env` files are git-ignored (verify with `git chec
 ## 16. Deliberately out of scope — do NOT suggest
 
 - **Public profile pages** (dropped by product decision — owner info appears only inline on item payloads)
+- **Location browse filter** (REMOVED by user decision, commit "removed the city searching feature"; `location` survives only as a public owner field on item payloads)
+- **Saved items / wishlist** (REMOVED by user decision — docs previously claimed it shipped; no `savedItemIds`, no `/save` endpoints, no `/dashboard/saved` route exist in code. Do not re-add without an explicit ask)
 - Real payments / monetary value (points are non-monetary) · shipping/logistics · social login
 - Docker / docker-compose (anywhere, ever) · TypeScript · migration frameworks
 - In-app messaging, mobile app, geolocation "near me", BullMQ/Redis queues (only if classify latency ever becomes a real problem — it currently runs sub-second)
@@ -360,4 +365,4 @@ Secrets are never committed; `.env` files are git-ignored (verify with `git chec
 
 ## 19. Status summary
 
-Phases 0–8 of the implementation plan are **100% complete** (init → architecture → database → auth → core backend → core frontend → AI classification → cross-cutting states → testing hardening), plus three user-requested scope additions (dispute kit, contact reveal + phone validation, location filter) and three recent features (**featured carousel, editable profile, saved items**). Remaining: deployment (P9) and demo-seed expansion (P10). The former admin-REMOVE gap is CLOSED: admins can strike live listings (REMOVE action, reason mandatory, audit row, `/admin/live` monitoring page + item-detail Admin controls). Full test suites, lint, format, and build are green.
+Phases 0–8 of the implementation plan are **100% complete** (init → architecture → database → auth → core backend → core frontend → AI classification → cross-cutting states → testing hardening), plus user-requested scope additions (dispute kit, contact reveal + phone validation) and recent features (**featured carousel — shipped as latest-4 with overflow-aware controls, editable profile, fixed session window with client auto-logout, admin moderator-only nav**). The location browse filter and saved-items/wishlist features were REMOVED by user decision (§16). Remaining: deployment (P9) and demo-seed expansion (P10, incl. making the 25-point signup grant ledger-backed). The former admin-REMOVE gap is CLOSED: admins can strike live listings (REMOVE action, reason mandatory, audit row, `/admin/live` monitoring page + item-detail Admin controls). Full test suites, lint, format, and build are green.
