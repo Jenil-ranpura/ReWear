@@ -97,15 +97,19 @@ export default function HomePage() {
       {/* ── Points, explained with the REAL formula ───────────────────── */}
       <section className="mx-auto mt-28 max-w-6xl sm:mt-36">
         <div className="grid items-start gap-10 lg:grid-cols-[1fr_1.2fr]">
-          <Reveal>
+          {/* min-w-0: grid items default to min-width:auto, so the 5-column
+              formula table's min-content width would otherwise force this
+              column to ~530px and blow out the 360px viewport (scrollWidth
+              546 vs 360). The table itself scrolls inside its own card. */}
+          <Reveal className="min-w-0">
             <SectionHeading
               eyebrow="Points"
               title="Every item is worth something precise"
               sub="A listing's point value is derived — never guessed: category base × condition multiplier. Points are a community currency, not money. You earn them when your items find new homes."
             />
           </Reveal>
-          <Reveal delay={100}>
-            <div className="card overflow-hidden">
+          <Reveal delay={100} className="min-w-0">
+            <div className="card overflow-x-auto">
               <table className="w-full text-sm">
                 <caption className="sr-only">
                   Point values by category and condition (base points × condition multiplier)

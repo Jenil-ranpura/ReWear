@@ -660,7 +660,7 @@ export default function ItemFormPage() {
                   </thead>
                   <tbody>
                     {ITEM_CATEGORIES.map((cat) => (
-                      <tr className="border-t border-hairline text-ink-2">
+                      <tr key={cat} className="border-t border-hairline text-ink-2">
                         <td className="px-3 py-1.5 font-medium">{cat}</td>
                         <td className="px-3 py-1.5">{BASE_POINTS[cat]}</td>
                         {ITEM_CONDITION.map((cond) => (

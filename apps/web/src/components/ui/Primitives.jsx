@@ -98,7 +98,10 @@ export function ItemImage({ item, className = '', eager = false }) {
  * Fires once per mount; disabled entirely under prefers-reduced-motion
  * (CSS also collapses it). Falls back to visible when IO is unavailable.
  */
-export function Reveal({ children, className = '', delay = 0 }) {
+export function Reveal({ children, className = 'min-w-0', delay = 0 }) {
+  // min-w-0 default: grid/flex items default to min-width:auto, so a wide
+  // child (e.g. a data table) would otherwise push the item past the viewport
+  // (caught by the P6 visual QA at 360px). Callers can override via className.
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
 
