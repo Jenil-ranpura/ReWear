@@ -34,7 +34,6 @@ playwright/.cache/
 # Local working docs — kept out of the public repo on purpose
 implementation.md
 progress.md
-AI-CONTEXT.md
 
 # Codebuff/Freebuff agent state
 .freebuff/
