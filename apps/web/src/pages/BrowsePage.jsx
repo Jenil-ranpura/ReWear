@@ -6,6 +6,9 @@
  * last keystroke — results update as you type, no submit button), useQuery +
  * AsyncBoundary + ItemCard grid, and bounded pagination. Any filter change
  * resets to page 1.
+ *
+ * Redesign: calm hairline filter surface, Chip primitives, editorial empty
+ * state, tabular result count. Logic and URL contract untouched.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -16,6 +19,7 @@ import * as itemsApi from '../lib/api/items.js';
 import AsyncBoundary from '../components/shared/AsyncBoundary.jsx';
 import ItemCard from '../components/shared/ItemCard.jsx';
 import Pagination from '../components/shared/Pagination.jsx';
+import { Chip } from '../components/ui/Primitives.jsx';
 import { ITEM_CONDITION } from '@rewear/shared-schemas';
 
 /** Free-text categories (§9.1/seed: JACKETS, DRESSES, COATS, …) — the panel
@@ -111,19 +115,13 @@ export default function BrowsePage() {
   const toggle = (key, current, value) =>
     updateParams({ [key]: toggleValue(current, value), page: null });
 
-  const chip = (active) =>
-    `rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition ${
-      active
-        ? 'bg-brand-700 text-white ring-brand-600'
-        : 'bg-white text-stone-700 ring-stone-300 hover:bg-stone-50'
-    }`;
-
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-4 pt-4">
         <div>
-          <h1 className="text-3xl font-bold text-stone-900">Browse items</h1>
-          <p className="mt-1 text-stone-500">Give a pre-loved garment its next chapter.</p>
+          <p className="eyebrow">Catalog</p>
+          <h1 className="font-display mt-2 text-4xl text-ink sm:text-5xl">Browse items</h1>
+          <p className="mt-2 text-ink-2">Give a pre-loved garment its next chapter.</p>
         </div>
         <input
           type="search"
@@ -131,45 +129,38 @@ export default function BrowsePage() {
           onChange={(e) => setQInput(e.target.value)}
           placeholder="Search jackets, dresses…"
           aria-label="Search items"
-          className="w-full max-w-sm rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+          className="field w-full max-w-sm"
         />
       </header>
 
-      <div className="flex flex-wrap gap-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+      <div className="card flex flex-wrap gap-6 p-4">
         <FilterGroup label="Category">
           {CATEGORY_CHIPS.map((c) => (
-            <button
+            <Chip
               key={c}
-              type="button"
+              selected={categories.includes(c)}
               onClick={() => toggle('category', categories, c)}
-              className={chip(categories.includes(c))}
             >
               {c}
-            </button>
+            </Chip>
           ))}
         </FilterGroup>
         <FilterGroup label="Size">
           {SIZE_CHIPS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => toggle('size', sizes, s)}
-              className={chip(sizes.includes(s))}
-            >
+            <Chip key={s} selected={sizes.includes(s)} onClick={() => toggle('size', sizes, s)}>
               {s}
-            </button>
+            </Chip>
           ))}
         </FilterGroup>
         <FilterGroup label="Condition">
           {ITEM_CONDITION.map((c) => (
-            <button
+            <Chip
               key={c}
-              type="button"
+              selected={conditions.includes(c)}
               onClick={() => toggle('condition', conditions, c)}
-              className={chip(conditions.includes(c))}
             >
               {c.replace('_', ' ')}
-            </button>
+            </Chip>
           ))}
         </FilterGroup>
       </div>
@@ -178,9 +169,9 @@ export default function BrowsePage() {
         query={itemsQuery}
         isEmpty={(d) => d?.total === 0}
         empty={
-          <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200">
-            <p className="text-lg font-semibold text-stone-800">No items match those filters</p>
-            <p className="mt-1 text-stone-500">
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-2xl text-ink">No items match those filters</p>
+            <p className="measure mx-auto mt-2 text-sm leading-relaxed text-ink-2">
               Try removing a filter or searching for something else.
             </p>
             <button
@@ -189,7 +180,7 @@ export default function BrowsePage() {
                 setQInput('');
                 setSearchParams(new URLSearchParams());
               }}
-              className="mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+              className="pressable mt-6 rounded-[6px] bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
             >
               Clear all filters
             </button>
@@ -198,7 +189,7 @@ export default function BrowsePage() {
       >
         {(data) => (
           <>
-            <p className="text-sm text-stone-500" aria-live="polite">
+            <p className="tabular text-sm text-ink-2" aria-live="polite">
               {data.total} item{data.total === 1 ? '' : 's'} found
             </p>
             <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -221,9 +212,7 @@ export default function BrowsePage() {
 function FilterGroup({ label, children }) {
   return (
     <fieldset>
-      <legend className="mb-1.5 text-xs font-bold uppercase tracking-wide text-stone-450">
-        {label}
-      </legend>
+      <legend className="eyebrow mb-2">{label}</legend>
       <div className="flex flex-wrap gap-2">{children}</div>
     </fieldset>
   );

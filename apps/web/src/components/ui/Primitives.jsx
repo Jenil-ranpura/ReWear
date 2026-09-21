@@ -77,11 +77,14 @@ export function ItemImage({ item, className = '', eager = false }) {
           className="h-full w-full object-cover"
         />
       ) : (
+        // No photo → refined typographic fallback. role="img" + label keeps
+        // it a meaningful, named graphic for AT (the old <img alt> contract).
         <div
-          aria-hidden="true"
+          role="img"
+          aria-label={item?.title ?? 'Item'}
           className="flex h-full w-full items-center justify-center bg-brand-50"
         >
-          <span className="font-display text-4xl text-brand-300">
+          <span aria-hidden="true" className="font-display text-4xl text-brand-300">
             {(item?.title ?? '?').trim().charAt(0).toUpperCase()}
           </span>
         </div>

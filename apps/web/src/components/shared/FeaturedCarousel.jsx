@@ -121,12 +121,12 @@ export default function FeaturedCarousel() {
   if (isLoading) {
     return (
       <section aria-label="Featured items" data-testid="featured-carousel" className="mt-12">
-        <div className="mb-4 h-7 w-48 animate-pulse rounded bg-stone-200" aria-hidden="true" />
+        <div className="mb-4 h-7 w-48 animate-pulse rounded bg-ink/6" aria-hidden="true" />
         <div className="flex gap-4 overflow-hidden">
           {[0, 1, 2, 3].map((n) => (
             <div
               key={n}
-              className="aspect-[4/3] w-1/2 shrink-0 animate-pulse rounded-xl bg-stone-200 sm:w-1/3 lg:w-1/4"
+              className="aspect-[4/5] w-1/2 shrink-0 animate-pulse rounded-[12px] bg-ink/6 sm:w-1/3 lg:w-1/4"
               aria-hidden="true"
             />
           ))}
@@ -151,14 +151,14 @@ export default function FeaturedCarousel() {
       onBlurCapture={() => setPaused(false)}
     >
       <div className="mb-4 flex items-end justify-between gap-4">
-        <h2 className="text-2xl font-bold text-stone-900">Fresh on ReWear</h2>
+        <h2 className="font-display text-2xl text-ink sm:text-3xl">Fresh on ReWear</h2>
         <div className={`flex gap-2 ${showControls ? '' : 'hidden'}`}>
           <button
             type="button"
             onClick={() => scrollToIndex(activeIndex - 1)}
             disabled={activeIndex === 0}
             aria-label="Previous items"
-            className="rounded-full bg-white p-2 text-stone-700 shadow-sm ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-40"
+            className="pressable rounded-full bg-white p-2 text-ink-2 ring-1 ring-hairline transition-colors hover:bg-brand-50 hover:text-ink disabled:opacity-40"
           >
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
               <path
@@ -173,7 +173,7 @@ export default function FeaturedCarousel() {
             onClick={() => scrollToIndex(activeIndex + 1)}
             disabled={activeIndex === items.length - 1}
             aria-label="Next items"
-            className="rounded-full bg-white p-2 text-stone-700 shadow-sm ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-40"
+            className="pressable rounded-full bg-white p-2 text-ink-2 ring-1 ring-hairline transition-colors hover:bg-brand-50 hover:text-ink disabled:opacity-40"
           >
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
               <path
@@ -213,7 +213,7 @@ export default function FeaturedCarousel() {
               aria-current={index === activeIndex}
               onClick={() => scrollToIndex(index)}
               className={`h-2 rounded-full transition-all ${
-                index === activeIndex ? 'w-6 bg-brand-700' : 'w-2 bg-stone-300 hover:bg-stone-400'
+                index === activeIndex ? 'w-6 bg-brand-700' : 'w-2 bg-ink/15 hover:bg-ink/25'
               }`}
             />
           ))}

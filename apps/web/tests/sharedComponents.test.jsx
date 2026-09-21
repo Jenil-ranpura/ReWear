@@ -65,11 +65,13 @@ describe('<ItemCard>', () => {
     expect(screen.queryByText('APPROVED')).not.toBeInTheDocument();
   });
 
-  it('falls back to a placeholder when there are no images', () => {
+  it('falls back to a typographic placeholder when there are no images', () => {
+    // Redesign: the data-URI "No photo" SVG became a refined tonal block
+    // with the title initial — still a named, accessible graphic.
     renderWithProviders(<ItemCard item={{ ...ITEM, images: [] }} />);
     const img = screen.getByRole('img', { name: /corduroy jacket/i });
-    expect(img.getAttribute('src')).toMatch(/^data:image/);
-    expect(img.getAttribute('src')).toContain('No%20photo');
+    expect(img).not.toHaveAttribute('src');
+    expect(img.textContent).toContain('C');
   });
 });
 
