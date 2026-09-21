@@ -105,9 +105,10 @@ export default function MySwapsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-stone-900">Swap requests</h1>
-        <p className="mt-1 text-sm text-stone-500">
+      <header className="pt-4">
+        <p className="eyebrow">Dashboard</p>
+        <h1 className="font-display mt-2 text-4xl text-ink">Swap requests</h1>
+        <p className="mt-2 text-sm text-ink-2">
           Requests on your items, and requests you&apos;ve made.
         </p>
       </header>
@@ -120,10 +121,10 @@ export default function MySwapsPage() {
             role="tab"
             aria-selected={direction === dir}
             onClick={() => setDirection(dir)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${
+            className={`pressable relative rounded-[6px] px-4 py-2 text-sm font-semibold capitalize transition-colors ${
               direction === dir
                 ? 'bg-brand-700 text-white'
-                : 'bg-white text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50'
+                : 'bg-white text-ink-2 ring-1 ring-hairline hover:bg-brand-50 hover:text-ink'
             }`}
           >
             {dir}
@@ -142,10 +143,7 @@ export default function MySwapsPage() {
       </div>
 
       {error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
+        <p role="alert" className="rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red">
           {error}
         </p>
       )}
@@ -154,13 +152,13 @@ export default function MySwapsPage() {
         query={swapsQuery}
         isEmpty={(d) => d?.requests?.length === 0}
         empty={
-          <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200">
-            <p className="text-lg font-semibold text-stone-800">
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-2xl text-ink">
               {direction === 'incoming'
                 ? 'No requests on your items yet'
                 : 'You haven\u2019t requested anything yet'}
             </p>
-            <p className="mt-1 text-stone-500">
+            <p className="measure mx-auto mt-2 text-sm leading-relaxed text-ink-2">
               {direction === 'incoming'
                 ? 'When someone wants one of your listings, it shows up here.'
                 : 'Browse items and request a swap or redeem with points.'}

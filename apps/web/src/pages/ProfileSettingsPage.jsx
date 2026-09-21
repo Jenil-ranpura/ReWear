@@ -25,8 +25,8 @@ import { useAuth } from '../state/AuthContext.jsx';
 import { useToast } from '../components/shared/ToastProvider.jsx';
 import ForbiddenPage from './ForbiddenPage.jsx';
 
-const FIELD_CLASS =
-  'mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200';
+// Redesign: shared .field token class (hairline, accent focus).
+const FIELD_CLASS = 'field mt-1';
 
 export default function ProfileSettingsPage() {
   const { user, updateUser } = useAuth();
@@ -128,25 +128,23 @@ export default function ProfileSettingsPage() {
 
   return (
     <section className="mx-auto max-w-xl">
-      <nav aria-label="Breadcrumb" className="text-sm text-stone-500">
-        <Link to="/dashboard" className="hover:underline">
+      <nav aria-label="Breadcrumb" className="text-sm text-ink-2">
+        <Link to="/dashboard" className="link-underline">
           Dashboard
         </Link>
         <span aria-hidden="true"> / </span>
-        <span className="font-medium text-stone-700">Profile</span>
+        <span className="font-medium text-ink">Profile</span>
       </nav>
 
-      <h1 className="mt-2 text-3xl font-bold text-stone-900">Profile settings</h1>
-      <p className="mt-1 text-stone-500">
+      <p className="eyebrow mt-6">Settings</p>
+      <h1 className="font-display mt-2 text-4xl text-ink">Profile settings</h1>
+      <p className="mt-2 text-sm text-ink-2">
         {user?.email} · signed in{user?.location ? ` · ${user.location}` : ''}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-8 space-y-5">
         {serverError && (
-          <p
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
+          <p role="alert" className="rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red">
             {serverError}
           </p>
         )}
@@ -154,7 +152,7 @@ export default function ProfileSettingsPage() {
           <p
             role="status"
             data-testid="profile-saved"
-            className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800"
+            className="rounded-[6px] bg-tint px-4 py-3 text-sm text-brand-800"
           >
             Your profile has been updated.
           </p>
@@ -172,7 +170,7 @@ export default function ProfileSettingsPage() {
             {...registerField('name')}
             className={FIELD_CLASS}
           />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+          {errors.name && <p className="mt-1 text-sm text-status-red">{errors.name.message}</p>}
         </div>
 
         <div>
@@ -188,14 +186,14 @@ export default function ProfileSettingsPage() {
             {...registerField('phone')}
             className={FIELD_CLASS}
           />
-          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
-          <p className="mt-1 text-xs text-stone-450">
+          {errors.phone && <p className="mt-1 text-sm text-status-red">{errors.phone.message}</p>}
+          <p className="mt-1.5 text-xs text-stone-450">
             With country code — shown to swap partners only after you accept a swap.
           </p>
         </div>
 
-        <fieldset className="rounded-xl border border-stone-200 p-4">
-          <legend className="px-1 text-sm font-semibold text-stone-700">Change password</legend>
+        <fieldset className="rounded-[12px] border border-hairline p-4">
+          <legend className="px-1 text-sm font-semibold text-ink">Change password</legend>
           <p className="text-xs text-stone-450">Leave blank to keep your current password.</p>
 
           <div className="mt-3">
@@ -216,7 +214,7 @@ export default function ProfileSettingsPage() {
               className={FIELD_CLASS}
             />
             {errors.currentPassword && (
-              <p className="mt-1 text-sm text-red-600">{errors.currentPassword.message}</p>
+              <p className="mt-1 text-sm text-status-red">{errors.currentPassword.message}</p>
             )}
           </div>
 
@@ -233,9 +231,9 @@ export default function ProfileSettingsPage() {
               className={FIELD_CLASS}
             />
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              <p className="mt-1 text-sm text-status-red">{errors.password.message}</p>
             )}
-            <p className="mt-1 text-xs text-stone-450">At least 8 characters.</p>
+            <p className="mt-1.5 text-xs text-stone-450">At least 8 characters.</p>
           </div>
         </fieldset>
 
@@ -243,7 +241,7 @@ export default function ProfileSettingsPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="pressable rounded-[6px] bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? 'Saving…' : 'Save changes'}
           </button>

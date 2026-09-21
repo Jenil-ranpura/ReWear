@@ -89,8 +89,7 @@ function parseTags(input) {
   return [...seen];
 }
 
-const inputClass =
-  'mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200';
+const inputClass = 'field mt-1';
 
 /** Condition labels for the §14.4 multiplier table shown under Point value. */
 const CONDITION_LABELS = {
@@ -337,14 +336,11 @@ export default function ItemFormPage() {
   if (isEdit && loadError) {
     return (
       <section className="mx-auto max-w-xl">
-        <div
-          role="alert"
-          className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-stone-200"
-        >
-          <p className="font-semibold text-stone-800">{loadError}</p>
+        <div role="alert" className="card p-8 text-center">
+          <p className="font-semibold text-ink">{loadError}</p>
           <Link
             to="/dashboard"
-            className="mt-4 inline-block font-semibold text-brand-700 hover:underline"
+            className="link-underline mt-4 inline-block font-semibold text-brand-700"
           >
             Back to dashboard
           </Link>
@@ -356,8 +352,8 @@ export default function ItemFormPage() {
   if (isEdit && !existing && !loadError) {
     return (
       <div className="mx-auto max-w-xl" data-testid="form-loading">
-        <div className="h-8 w-2/3 animate-pulse rounded bg-stone-200" />
-        <div className="mt-4 h-64 animate-pulse rounded bg-stone-100" />
+        <div className="h-8 w-2/3 animate-pulse rounded bg-ink/6" />
+        <div className="mt-4 h-64 animate-pulse rounded bg-ink/4" />
       </div>
     );
   }
@@ -371,18 +367,18 @@ export default function ItemFormPage() {
   if (isEdit && notEditable) {
     return (
       <section className="mx-auto max-w-2xl">
-        <div className="rounded-xl bg-amber-50 p-6 ring-1 ring-amber-200">
+        <div className="rounded-[12px] bg-amber-50 p-6">
           <div className="flex items-center gap-2">
             <StatusBadge status={existing.status} />
-            <h1 className="text-lg font-bold text-stone-900">This listing can&apos;t be edited</h1>
+            <h1 className="text-lg font-bold text-ink">This listing can&apos;t be edited</h1>
           </div>
-          <p className="mt-2 text-sm text-stone-600">
+          <p className="mt-2 text-sm text-ink-2">
             Items can only be edited while pending or approved. This item is{' '}
             {existing.status.toLowerCase().replace('_', ' ')}.
           </p>
           <Link
             to={`/items/${existing._id}`}
-            className="mt-4 inline-block rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+            className="pressable mt-4 inline-block rounded-[6px] bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
           >
             View item
           </Link>
@@ -394,11 +390,11 @@ export default function ItemFormPage() {
   if (isEdit && existing && !isOwner) {
     return (
       <section className="mx-auto max-w-2xl">
-        <div className="rounded-xl bg-red-50 p-6 ring-1 ring-red-200" role="alert">
-          <h1 className="text-lg font-bold text-stone-900">You can only edit your own items</h1>
+        <div className="rounded-[12px] bg-red-50 p-6" role="alert">
+          <h1 className="text-lg font-bold text-ink">You can only edit your own items</h1>
           <Link
             to="/dashboard"
-            className="mt-3 inline-block font-semibold text-brand-700 hover:underline"
+            className="link-underline mt-3 inline-block font-semibold text-brand-700"
           >
             Back to dashboard
           </Link>
@@ -413,7 +409,7 @@ export default function ItemFormPage() {
     return (
       <span
         data-testid={`ai-tag-${field}`}
-        className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-brand-700"
+        className="ml-2 rounded-full bg-tint px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-brand-800"
       >
         AI suggested
       </span>
@@ -445,15 +441,15 @@ export default function ItemFormPage() {
   return (
     <section className="mx-auto max-w-2xl">
       {created ? (
-        <div className="rounded-xl bg-white p-10 text-center shadow-sm ring-1 ring-stone-200">
-          <h1 className="text-2xl font-bold text-stone-900">Submitted for review</h1>
-          <p className="mt-2 text-stone-600">
+        <div className="card p-10 text-center">
+          <h1 className="font-display text-3xl text-ink">Submitted for review</h1>
+          <p className="measure mx-auto mt-2 text-sm leading-relaxed text-ink-2">
             “{created.title}” is now pending moderation. You&apos;ll see it on your dashboard and it
             will appear publicly once approved.
           </p>
           {notice && (
             <p
-              className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800"
+              className="mx-auto mt-4 max-w-md rounded-[6px] bg-amber-50 px-4 py-3 text-sm text-status-amber"
               role="status"
             >
               {notice}
@@ -462,13 +458,13 @@ export default function ItemFormPage() {
           <div className="mt-6 flex justify-center gap-3">
             <Link
               to="/items"
-              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+              className="pressable rounded-[6px] bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
             >
               Browse items
             </Link>
             <Link
               to="/dashboard"
-              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+              className="pressable rounded-[6px] bg-white px-4 py-2 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
             >
               Go to dashboard
             </Link>
@@ -476,10 +472,11 @@ export default function ItemFormPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <h1 className="text-3xl font-bold text-stone-800">
+          <p className="eyebrow">{isEdit ? 'Dashboard' : 'New listing'}</p>
+          <h1 className="font-display mt-2 text-4xl text-ink">
             {isEdit ? 'Edit item' : 'List an item'}
           </h1>
-          <p className="mt-2 text-stone-500">
+          <p className="measure mt-2 text-sm text-ink-2">
             {isEdit
               ? 'Update the details of your listing.'
               : 'Give a pre-loved garment its next chapter. Photos upload right away — your text is safe even if an upload fails.'}
@@ -488,7 +485,7 @@ export default function ItemFormPage() {
           {serverError && (
             <p
               role="alert"
-              className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              className="mt-6 rounded-[6px] bg-red-50 px-4 py-3 text-sm text-status-red"
             >
               {serverError}
             </p>
@@ -634,16 +631,16 @@ export default function ItemFormPage() {
                 tabIndex={-1}
                 {...registerField('pointValue')}
                 data-testid="point-value-input"
-                className={`${inputClass} cursor-default bg-stone-100 text-stone-600`}
+                className={`${inputClass} tabular cursor-default bg-canvas text-ink-2`}
                 aria-readonly="true"
               />
-              <p className="mt-1 text-sm text-stone-500">
+              <p className="mt-1.5 text-sm text-ink-2">
                 Calculated automatically: base points for the category × the condition multiplier.
                 Pick a category and condition above.
               </p>
               <div
                 data-testid="points-formula-table"
-                className="mt-2 overflow-hidden rounded-lg bg-stone-50 ring-1 ring-stone-200"
+                className="tabular mt-2 overflow-hidden rounded-[6px] bg-canvas ring-1 ring-hairline"
               >
                 <table className="w-full text-left text-xs">
                   <thead>
@@ -678,12 +675,12 @@ export default function ItemFormPage() {
               </div>
             </Field>
 
-            <div className="flex items-center justify-between gap-3 border-t border-stone-200 pt-5">
+            <div className="flex items-center justify-between gap-3 border-t border-hairline pt-5">
               {isEdit ? (
                 <button
                   type="button"
                   onClick={() => setConfirmOpen(true)}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                  className="pressable rounded-[6px] px-4 py-2 text-sm font-semibold text-status-red transition-colors hover:bg-red-50"
                 >
                   Delete listing
                 </button>
@@ -694,14 +691,14 @@ export default function ItemFormPage() {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+                  className="pressable rounded-[6px] bg-white px-4 py-2 text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-700 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="pressable rounded-[6px] bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Submit for review'}
                 </button>

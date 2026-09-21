@@ -21,16 +21,17 @@ export default function MyItemsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-3 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">My listings</h1>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="eyebrow">Dashboard</p>
+          <h1 className="font-display mt-2 text-4xl text-ink">My listings</h1>
+          <p className="mt-2 text-sm text-ink-2">
             Everything you&apos;ve listed, including items still awaiting moderation.
           </p>
         </div>
         <Link
           to="/items/new"
-          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+          className="pressable rounded-[6px] bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
         >
           List an item
         </Link>
@@ -40,16 +41,14 @@ export default function MyItemsPage() {
         query={itemsQuery}
         isEmpty={(d) => d?.items?.length === 0}
         empty={
-          <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200">
-            <p className="text-lg font-semibold text-stone-800">
-              You haven&apos;t listed anything yet
-            </p>
-            <p className="mt-1 text-stone-500">
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-2xl text-ink">You haven&apos;t listed anything yet</p>
+            <p className="measure mx-auto mt-2 text-sm leading-relaxed text-ink-2">
               Give a pre-loved garment its next chapter — your first listing earns you points.
             </p>
             <Link
               to="/items/new"
-              className="mt-4 inline-block rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+              className="pressable mt-6 inline-block rounded-[6px] bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
             >
               List your first item
             </Link>
@@ -64,7 +63,7 @@ export default function MyItemsPage() {
                 {EDITABLE.includes(item.status) && (
                   <Link
                     to={`/items/${item._id}/edit`}
-                    className="block rounded-lg bg-white px-3 py-2 text-center text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+                    className="pressable block rounded-[6px] bg-white px-3 py-2 text-center text-sm font-semibold text-ink ring-1 ring-hairline transition-colors hover:bg-brand-50"
                   >
                     Edit
                   </Link>
