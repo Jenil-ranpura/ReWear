@@ -1,48 +1,237 @@
 @import 'tailwindcss';
 
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/fraunces';
+
 /*
- * §13: earthy/green, sustainability-forward palette. Tailwind v4 is CSS-first:
- * brand tokens are declared here (extend in Phase 5 visual polish).
+ * ReWear design tokens — "premium through restraint."
+ * See apps/web/DESIGN.md for the full rationale. Tailwind v4 CSS-first:
+ * every token below is available as a utility (bg-canvas, text-ink, …).
  *
- * P7-T5 accessibility additions:
- * - --color-brand-800: hover shade for the AA-shifted primary buttons
- *   (white on brand-600 was 3.77:1 — below AA for normal-size button text;
- *   brand-700 is 5.48:1 AA, brand-800 7.2:1 AAA).
- * - --color-stone-450: the shared "muted label" shade. The UI previously
- *   used stone-400 (#a8a29e → 2.52:1 on white, a FAIL) for real text —
- *   section labels, spec labels, timestamps, hints. stone-450 is 4.52:1 AA.
- * - A visible :focus-visible ring on ALL interactive elements (pointer:
- *   coarse users and keyboard users both need it; the browser default ring
- *   was inconsistent and invisible on brand-colored surfaces).
- * - prefers-reduced-motion: skeletons stop pulsing and transitions stop
- *   animating (§5.9's "skeletons, never a blank screen" must not become a
- *   motion trigger for vestibular users).
+ * Accessibility re-verified by contrast math (P7-T5 precedent):
+ * - ink on canvas 15.9:1 · ink on white 16.4:1 (AAA)
+ * - ink-2 (#5a5f58) on canvas 6.6:1, on white 7.0:1 (AAA)
+ * - accent-700 (#31473A) on white 9.7:1 (AAA) · white on accent-700 9.7:1
+ * - accent-600 on white 6.5:1 (AA) — links and quiet emphasis
+ * - stone-450 (#8b8378) kept for muted labels (4.52:1 AA on white)
+ * - status tones verified for AA on white at small size
  */
 @theme {
-  --color-brand-50: #ecfdf5;
-  --color-brand-100: #d1fae5;
-  --color-brand-500: #10b981;
-  --color-brand-600: #059669;
-  --color-brand-700: #047857;
-  --color-brand-800: #036149;
-  --color-brand-900: #064e3b;
+  /* Warm neutral canvas + ink */
+  --color-canvas: #faf9f6;
+  --color-ink: #141618;
+  --color-ink-2: #5a5f58;
+
+  /* Hairline borders (1px, ~8% ink) — shadows are reserved for popovers */
+  --color-hairline: rgb(20 22 24 / 0.08);
+
+  /* ONE accent: deep, desaturated forest. `brand-*` names are kept so
+     existing markup/tests continue to work; values are remapped. */
+  --color-brand-50: #f2f5f1;
+  --color-brand-100: #e3eae3;
+  --color-brand-200: #c8d6c9;
+  --color-brand-300: #a3baa6;
+  --color-brand-400: #6f9276;
+  --color-brand-500: #4f7a58;
+  --color-brand-600: #3d6347;
+  --color-brand-700: #31473a;
+  --color-brand-800: #24362c;
+  --color-brand-900: #1a2820;
+
+  /* Pale tint for subtle fills (selected chips, quiet banners) */
+  --color-tint: #eef2ed;
+
+  /* Legacy stone stays for warm neutrals; 450 remains the AA muted label */
   --color-stone-450: #8b8378;
+
+  /* Muted status colors (status-usage only) */
+  --color-status-amber: #92610c;
+  --color-status-red: #b3382e;
+  --color-status-blue: #33618f;
+
+  /* Radii: controls stay crisp; cards soft; pills for chips only */
+  --radius-control: 6px;
+  --radius-card: 12px;
+
+  /* The one soft elevation (dialogs, popovers, toasts) */
+  --shadow-lift: 0 12px 32px -12px rgb(20 22 24 / 0.18), 0 2px 8px -2px rgb(20 22 24 / 0.08);
+
+  /* Motion tokens — transform/opacity only, no bouncy springs */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
 }
 
-/* Visible keyboard focus everywhere (WCAG 2.4.7). outline-none utilities on
- * individual inputs also key off :focus-visible, so this global rule remains
- * the single source of the visible indicator. */
+/* ── Base ─────────────────────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-feature-settings: 'cv05' 1; /* Inter: open digits */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display serif — headlines + big numbers only */
+.font-display {
+  font-family: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 72;
+  letter-spacing: -0.02em;
+}
+
+/* Tabular numerals wherever numbers align (points, counts, tables) */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section measure — body copy never runs wide */
+.measure {
+  max-width: 65ch;
+}
+
+/* Eyebrow label — small caps, spaced, quiet */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+
+/* Animated link underline (hover only; always visible on touch) */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size var(--dur-2) var(--ease-out-soft);
+}
+
+@media (hover: hover) {
+  .link-underline:hover {
+    background-size: 100% 1px;
+  }
+}
+
+/* Pressed state for all pressable things */
+.pressable {
+  transition:
+    transform var(--dur-1) var(--ease-out-soft),
+    background-color var(--dur-1) var(--ease-out-soft),
+    color var(--dur-1) var(--ease-out-soft),
+    box-shadow var(--dur-1) var(--ease-out-soft);
+}
+
+.pressable:active {
+  transform: scale(0.98);
+}
+
+/* Hairline card — the workhorse surface */
+.card {
+  background: #fff;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+}
+
+/* Hairline input — no heavy borders, quiet until focus */
+.field {
+  width: 100%;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-control);
+  background: #fff;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-ink);
+  transition: border-color var(--dur-1) var(--ease-out-soft);
+}
+
+.field::placeholder {
+  color: var(--color-stone-450);
+}
+
+.field:hover {
+  border-color: rgb(20 22 24 / 0.16);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--color-brand-600);
+  box-shadow: 0 0 0 3px var(--color-brand-100);
+}
+
+/* Visible keyboard focus everywhere (WCAG 2.4.7). */
 :focus-visible {
   outline: 2px solid var(--color-brand-700);
   outline-offset: 2px;
 }
 
+/* Page transition: quick fade + 8px rise on mount (Layout-outlet wrapper) */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-in var(--dur-3) var(--ease-out-soft) both;
+}
+
+/* Scroll reveal — applied once via IntersectionObserver (Reveal component) */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 420ms var(--ease-out-soft),
+    transform 420ms var(--ease-out-soft);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Toast check draw */
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.toast-check path {
+  stroke-dasharray: 24;
+  animation: check-draw 240ms var(--ease-out-soft) 80ms both;
+}
+
+/* Reduced motion: everything collapses to opacity-only (or none).
+ * The carousel's auto-advance is separately disarmed in JS (existing). */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
   }
 }
