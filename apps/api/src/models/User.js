@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
     // revealed to a swap counterparty ONLY on ACCEPT, via toSafeUser.
     phone: { type: String, default: null },
     role: { type: String, enum: USER_ROLE, default: 'USER' },
-    pointsBalance: { type: Number, default: 0 }, // denormalized ledger cache (§9.3)
+    pointsBalance: { type: Number, default: 25 }, // denormalized ledger cache (§9.3)
     isBanned: { type: Boolean, default: false },
   },
   { timestamps: true } // createdAt, updatedAt (§9.1)
