@@ -1,16 +1,22 @@
 /**
  * <FeaturedCarousel> (§1/§13 problem statement: landing-page featured items
- * carousel). Shows the LATEST APPROVED items (user decision — freshness is
- * the curation: "just got a second life"). Data comes from the existing
- * public browse endpoint (newest-first, APPROVED-forced server-side), so
- * there is zero backend work; the section renders null when nothing is
- * approved (never an empty shell on the landing page).
+ * carousel). Shows the LATEST 4 APPROVED items (user decision: a tight strip
+ * of the freshest listings — "just got a second life" — beats a long feed).
+ * Data comes from the existing public browse endpoint (newest-first,
+ * APPROVED-forced server-side), so there is zero backend work; the section
+ * renders null when nothing is approved (never an empty shell on the landing
+ * page).
  *
  * Structure: a scroll-snap flex track of REAL <ItemCard>s — pixel-identical
  * to browse, zero markup duplication, and native touch swiping for free
  * (arrows are a desktop affordance that call scrollTo). Auto-advances ~5s,
  * paused on hover/focus-within, and never armed under prefers-reduced-motion
  * (P7-T5: the global CSS kills animations; this additionally skips the timer).
+ *
+ * OVERFLOW-AWARE CONTROLS: on wide viewports all 4 cards fit at once — the
+ * strip is static, so arrows/dots/auto-advance would be inert chrome. The
+ * track is measured (and re-measured on resize — breakpoint crossings change
+ * card width) and the controls only render when there is something to scroll.
  *
  * activeIndex is ONE state updated by arrows/timer directly AND synced from
  * scroll events (touch swipes) — scroll events alone would be unreliable
@@ -20,14 +26,14 @@
  * labelled button group; ItemCard alt text carries the item titles.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import * as itemsApi from '../../lib/api/items.js';
 import ItemCard from './ItemCard.jsx';
 
 const AUTO_ADVANCE_MS = 5_000;
-const FEATURED_COUNT = 8;
+const FEATURED_COUNT = 4;
 const CARD_GAP_PX = 16; // gap-4 — keep in step with the track class
 
 /** Width of one step (card + gap) measured from the first real card. */
@@ -51,6 +57,8 @@ export default function FeaturedCarousel() {
   const trackRef = useRef(null);
   const [paused, setPaused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // null = not measured yet (controls stay visible — the safe default).
+  const [overflows, setOverflows] = useState(null);
 
   const scrollToIndex = (index) => {
     const track = trackRef.current;
@@ -65,9 +73,10 @@ export default function FeaturedCarousel() {
   };
 
   // Auto-advance: one card per tick, wrapping. Skipped for reduced-motion
-  // users (static strip), while hovered/focused, and for <2 items.
+  // users (static strip), while hovered/focused, when everything fits
+  // (measured non-overflow → nothing to scroll to), and for <2 items.
   useEffect(() => {
-    if (paused || items.length < 2) return undefined;
+    if (paused || overflows === false || items.length < 2) return undefined;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
 
     const timer = setInterval(() => {
@@ -75,7 +84,30 @@ export default function FeaturedCarousel() {
       scrollToIndex(next);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(timer);
-  }, [paused, activeIndex, items.length]);
+  }, [paused, overflows, activeIndex, items.length]);
+
+  // Overflow measurement — useLayoutEffect so the controls never flash: it
+  // runs BEFORE paint (useEffect would show them for one frame on desktop).
+  // jsdom has no layout engine (scrollWidth/clientWidth both 0) → treat as
+  // "unknown, assume overflow" so the controls remain the default and stay
+  // testable. Re-measured on resize: crossing the sm/lg breakpoints changes
+  // how many cards fit.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const track = trackRef.current;
+      if (!track) return;
+      if (track.scrollWidth === 0 && track.clientWidth === 0) {
+        setOverflows(true);
+        return;
+      }
+      setOverflows(track.scrollWidth > track.clientWidth + 1);
+    };
+    measure();
+    window.addEventListener('resize', measure, { passive: true });
+    return () => window.removeEventListener('resize', measure);
+  }, [items.length]);
+
+  const showControls = overflows !== false;
 
   // Touch-swipe sync: derive the index from scroll position.
   const handleScroll = () => {
@@ -120,7 +152,7 @@ export default function FeaturedCarousel() {
     >
       <div className="mb-4 flex items-end justify-between gap-4">
         <h2 className="text-2xl font-bold text-stone-900">Fresh on ReWear</h2>
-        <div className="flex gap-2">
+        <div className={`flex gap-2 ${showControls ? '' : 'hidden'}`}>
           <button
             type="button"
             onClick={() => scrollToIndex(activeIndex - 1)}
@@ -169,21 +201,24 @@ export default function FeaturedCarousel() {
       </div>
 
       {/* Dots: one per item; a labelled button group (not tabs — there are
-          no tabpanels). Current dot is elongated + brand-colored. */}
-      <div className="mt-3 flex justify-center gap-1.5">
-        {items.map((item, index) => (
-          <button
-            key={item._id}
-            type="button"
-            aria-label={`Go to item ${index + 1} of ${items.length}`}
-            aria-current={index === activeIndex}
-            onClick={() => scrollToIndex(index)}
-            className={`h-2 rounded-full transition-all ${
-              index === activeIndex ? 'w-6 bg-brand-700' : 'w-2 bg-stone-300 hover:bg-stone-400'
-            }`}
-          />
-        ))}
-      </div>
+          no tabpanels). Current dot is elongated + brand-colored. Hidden when
+          the strip fits (nothing to navigate). */}
+      {showControls && (
+        <div className="mt-3 flex justify-center gap-1.5">
+          {items.map((item, index) => (
+            <button
+              key={item._id}
+              type="button"
+              aria-label={`Go to item ${index + 1} of ${items.length}`}
+              aria-current={index === activeIndex}
+              onClick={() => scrollToIndex(index)}
+              className={`h-2 rounded-full transition-all ${
+                index === activeIndex ? 'w-6 bg-brand-700' : 'w-2 bg-stone-300 hover:bg-stone-400'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

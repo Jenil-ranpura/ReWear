@@ -19,9 +19,10 @@ function jsonResponse(status, body) {
   return { ok: status >= 200 && status < 300, status, json: async () => body };
 }
 
-// Distinct type/size/condition per item so no two cards share a spec line
-// (getBy* would throw on duplicates).
-const ITEMS = [1, 2, 3, 4, 5].map((n) => ({
+// The carousel fetches the latest 4 (FEATURED_COUNT) — the fixture mirrors
+// what the API would return. Distinct type/size/condition per item so no two
+// cards share a spec line (getBy* would throw on duplicates).
+const ITEMS = [1, 2, 3, 4].map((n) => ({
   _id: `i${n}`,
   title: `Item ${n}`,
   pointValue: 10 * n,
@@ -45,7 +46,7 @@ function mockFetch(items = ITEMS, { fail = false } = {}) {
         items,
         total: items.length,
         page: 1,
-        pageSize: 8,
+        pageSize: 4,
         totalPages: 1,
         hasNextPage: false,
         hasPrevPage: false,
@@ -83,7 +84,7 @@ afterEach(() => {
 });
 
 describe('FeaturedCarousel', () => {
-  it('fetches the latest approved items with the browse contract (page 1, pageSize 8)', async () => {
+  it('fetches the latest approved items with the browse contract (page 1, pageSize 4)', async () => {
     vi.stubGlobal('fetch', mockFetch());
     renderCarousel();
 
@@ -92,7 +93,7 @@ describe('FeaturedCarousel', () => {
       const listCall = fetchCalls.find((u) => u.includes('/items?'));
       expect(listCall).toBeDefined();
       expect(listCall).toContain('page=1');
-      expect(listCall).toContain('pageSize=8');
+      expect(listCall).toContain('pageSize=4');
       expect(listCall).not.toContain('status='); // APPROVED is forced server-side
     });
   });
@@ -104,7 +105,7 @@ describe('FeaturedCarousel', () => {
     await screen.findByRole('heading', { name: /fresh on rewear/i });
     expect(await screen.findByText('Item 1')).toBeInTheDocument();
     expect(screen.getByText('Item 3')).toBeInTheDocument();
-    expect(screen.getByText('50 pts')).toBeInTheDocument();
+    expect(screen.getByText('30 pts')).toBeInTheDocument();
     expect(screen.getByText('Type 3 · Size 3 · GOOD')).toBeInTheDocument();
   });
 
@@ -124,7 +125,7 @@ describe('FeaturedCarousel', () => {
                   items: ITEMS,
                   total: ITEMS.length,
                   page: 1,
-                  pageSize: 8,
+                  pageSize: 4,
                   totalPages: 1,
                   hasNextPage: false,
                   hasPrevPage: false,
@@ -166,7 +167,7 @@ describe('FeaturedCarousel', () => {
 
     await screen.findByText('Item 1');
     const dots = screen.getAllByRole('button', { name: /go to item/i });
-    expect(dots).toHaveLength(5);
+    expect(dots).toHaveLength(4);
     expect(dots[0]).toHaveAttribute('aria-current', 'true');
     expect(dots[2]).toHaveAttribute('aria-current', 'false');
   });
@@ -184,13 +185,12 @@ describe('FeaturedCarousel', () => {
     fireEvent.click(next); // index 1
     expect(prev).toBeEnabled();
     fireEvent.click(next); // 2
-    fireEvent.click(next); // 3
-    fireEvent.click(next); // 4 — last
+    fireEvent.click(next); // 3 — last of 4
     expect(next).toBeDisabled();
 
     // The dot state follows the arrows.
     const dots = screen.getAllByRole('button', { name: /go to item/i });
-    expect(dots[4]).toHaveAttribute('aria-current', 'true');
+    expect(dots[3]).toHaveAttribute('aria-current', 'true');
     fireEvent.click(dots[0]); // dots jump too
     expect(dots[0]).toHaveAttribute('aria-current', 'true');
   });
