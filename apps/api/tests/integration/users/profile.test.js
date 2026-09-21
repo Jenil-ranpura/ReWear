@@ -16,6 +16,9 @@ import { startTestDb, stopTestDb } from '../../../tests/helpers/testDb.js';
 import { User } from '../../../src/models/index.js';
 import { signAccessToken } from '../../../src/modules/auth/tokens.js';
 
+let admin;
+let adminToken;
+
 let me;
 let token;
 
@@ -29,6 +32,13 @@ beforeAll(async () => {
     location: 'Mumbai',
   });
   token = signAccessToken(me);
+  admin = await User.create({
+    name: 'Admin',
+    email: `profile-admin-${Date.now()}@test.dev`,
+    passwordHash: await bcrypt.hash('AdminPassword123!', 10),
+    role: 'ADMIN',
+  });
+  adminToken = signAccessToken(admin);
 });
 
 afterAll(async () => {
@@ -42,6 +52,19 @@ function patch(body) {
 describe('PATCH /users/me — auth', () => {
   it('401s without a token', async () => {
     await request(app).patch('/api/v1/users/me').send({ name: 'New Name' }).expect(401);
+  });
+
+  it('403s an ADMIN — profile self-service is a USER-only feature (product decision)', async () => {
+    const res = await request(app)
+      .patch('/api/v1/users/me')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Admin Renamed' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('FORBIDDEN');
+
+    // The admin's account is untouched.
+    const doc = await User.findById(admin._id).lean();
+    expect(doc.name).toBe('Admin');
   });
 });
 

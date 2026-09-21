@@ -15,6 +15,7 @@ import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-quer
 import * as adminApi from '../lib/api/admin.js';
 import AsyncBoundary from '../components/shared/AsyncBoundary.jsx';
 import ConfirmDialog from '../components/shared/ConfirmDialog.jsx';
+import ItemDetailsDialog from '../components/shared/ItemDetailsDialog.jsx';
 import Pagination from '../components/shared/Pagination.jsx';
 import StatusBadge from '../components/shared/StatusBadge.jsx';
 import { useToast } from '../components/shared/ToastProvider.jsx';
@@ -36,6 +37,7 @@ export function AdminTabs({ active }) {
   return (
     <div role="tablist" aria-label="Admin sections" className="flex gap-2">
       {tab('/admin', 'Pending items')}
+      {tab('/admin/live', 'Live items')}
       {tab('/admin/users', 'Users')}
       {tab('/admin/reports', 'Reports')}
     </div>
@@ -49,6 +51,7 @@ function primaryImage(item) {
 export default function AdminQueuePage() {
   const [page, setPage] = useState(1);
   const [pendingAction, setPendingAction] = useState(null); // { item, action }
+  const [detailsItem, setDetailsItem] = useState(null); // full-details dialog
   const [reason, setReason] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -169,6 +172,15 @@ export default function AdminQueuePage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    {/* Judge with context: full details BEFORE deciding. */}
+                    <button
+                      type="button"
+                      data-testid={`admin-details-${item._id}`}
+                      onClick={() => setDetailsItem(item)}
+                      className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50"
+                    >
+                      Details
+                    </button>
                     <button
                       type="button"
                       onClick={() => onAction(item, 'APPROVE')}
@@ -191,6 +203,12 @@ export default function AdminQueuePage() {
           </>
         )}
       </AsyncBoundary>
+
+      {/* Full product details — read-only, so a reading mistake can't fire
+        a mutation; Approve/Reject stay on the row. */}
+      {detailsItem && (
+        <ItemDetailsDialog open onClose={() => setDetailsItem(null)} item={detailsItem} />
+      )}
 
       {pendingAction && (
         <ConfirmDialog

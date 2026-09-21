@@ -45,7 +45,11 @@ export const USER_ROLE = Object.freeze(['USER', 'ADMIN']);
 export const POINTS_TX_TYPE = Object.freeze(['EARNED', 'SPENT', 'ADJUSTED']);
 
 // --- Admin moderation (§5.8/§10 PATCH /admin/items/:id/moderate) ---
-export const ADMIN_ACTIONS = Object.freeze(['APPROVE', 'REJECT']);
+// REMOVE = post-approval takedown (problem statement: "remove inappropriate
+// or spam items"): catches listings that passed review but turn out to be
+// spam/inappropriate once live. Distinct from REJECT so the transition guard
+// can allow it from APPROVED without loosening the PENDING-only queue flow.
+export const ADMIN_ACTIONS = Object.freeze(['APPROVE', 'REJECT', 'REMOVE']);
 
 // --- Dispute reports (user-requested fraud-response scope addition) ---
 export const REPORT_REASON = Object.freeze([

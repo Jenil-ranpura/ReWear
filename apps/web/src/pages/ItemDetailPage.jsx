@@ -13,15 +13,20 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import * as itemsApi from '../lib/api/items.js';
+import * as adminApi from '../lib/api/admin.js';
 import AsyncBoundary from '../components/shared/AsyncBoundary.jsx';
+import ConfirmDialog from '../components/shared/ConfirmDialog.jsx';
 import StatusBadge from '../components/shared/StatusBadge.jsx';
 import SwapRequestDialog from '../components/swaps/SwapRequestDialog.jsx';
+import { useToast } from '../components/shared/ToastProvider.jsx';
 import { useAuth } from '../state/AuthContext.jsx';
-import { DIRECT_SWAP, POINTS_REDEMPTION } from '@rewear/shared-schemas';
+import { DIRECT_SWAP, POINTS_REDEMPTION, moderateItemSchema } from '@rewear/shared-schemas';
 
 const FALLBACK_IMAGE =
   'data:image/svg+xml;utf8,' +
@@ -108,6 +113,92 @@ function SwapActions({ item, viewer, status }) {
           Earn points by listing items — you&apos;re{' '}
           {(item.pointValue ?? 0) - (viewer.pointsBalance ?? 0)} points away from this redemption.
         </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Admin takedown control (problem statement: "remove inappropriate or spam
+ * items") — shown to ADMINS on live (APPROVED) listings so a listing can be
+ * struck the moment it's reported, from where the admin is already looking
+ * at it. The reason is resolved against the SHARED moderateItemSchema
+ * (REMOVE requires one); errors keep the dialog open (§5.9).
+ */
+function AdminRemoveControl({ item }) {
+  const [open, setOpen] = useState(false);
+  const [serverError, setServerError] = useState(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { push } = useToast();
+
+  const {
+    register: registerField,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(moderateItemSchema),
+    defaultValues: { action: 'REMOVE', reason: '' },
+  });
+
+  const onConfirm = async ({ reason }) => {
+    setServerError(null);
+    try {
+      await adminApi.moderate(item._id, 'REMOVE', reason);
+      setOpen(false);
+      push(`“${item.title}” removed — no longer publicly visible.`, { tone: 'success' });
+      queryClient.removeQueries({ queryKey: ['item', String(item._id)] });
+      // The admin's destination for removed items is the takedown trail.
+      navigate('/admin/live');
+    } catch (err) {
+      setServerError(err.message ?? 'Something went wrong. Please try again.');
+    }
+  };
+
+  if (item.status !== 'APPROVED') return null;
+
+  return (
+    <div className="rounded-xl bg-red-50 p-4 ring-1 ring-red-200">
+      <h2 className="text-sm font-bold uppercase tracking-wide text-red-800">Admin controls</h2>
+      <p className="mt-1 text-sm text-red-700">
+        Remove this listing if it is inappropriate or spam. The owner sees the reason.
+      </p>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+      >
+        Remove listing
+      </button>
+
+      {open && (
+        <ConfirmDialog
+          open
+          busy={isSubmitting}
+          danger
+          title={`Remove “${item.title}”?`}
+          message="The listing disappears from Browse immediately and the owner sees the reason. This cannot be undone."
+          confirmLabel="Remove"
+          onClose={() => !isSubmitting && setOpen(false)}
+          onConfirm={handleSubmit(onConfirm)}
+        >
+          <div className="space-y-1">
+            <label htmlFor="admin-remove-reason" className="text-sm font-semibold text-stone-700">
+              Reason for the owner <span className="font-normal text-red-600">(required)</span>
+            </label>
+            <textarea
+              id="admin-remove-reason"
+              rows={3}
+              maxLength={500}
+              aria-invalid={Boolean(errors.reason)}
+              {...registerField('reason')}
+              placeholder="e.g. Counterfeit brand listing"
+              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none"
+            />
+            {errors.reason && <p className="text-sm text-red-600">{errors.reason.message}</p>}
+            {serverError && <p className="text-sm text-red-600">{serverError}</p>}
+          </div>
+        </ConfirmDialog>
       )}
     </div>
   );
@@ -250,6 +341,8 @@ export default function ItemDetailPage() {
                   )}
 
                   <SwapActions item={item} viewer={user} status={item.status} />
+
+                  {user?.role === 'ADMIN' && <AdminRemoveControl item={item} />}
                 </div>
               </div>
             </>

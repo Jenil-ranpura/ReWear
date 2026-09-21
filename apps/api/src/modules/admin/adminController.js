@@ -6,6 +6,7 @@
 
 import {
   getUserDetail,
+  listAdminItems,
   listPendingItems,
   listReports,
   listUsers,
@@ -17,6 +18,12 @@ import {
 /** GET /admin/items/pending */
 export async function pendingQueue(req, res) {
   const data = await listPendingItems(req.validatedQuery ?? req.query);
+  res.status(200).json(data);
+}
+
+/** GET /admin/items?status=APPROVED|REMOVED — live-monitoring list. */
+export async function adminItems(req, res) {
+  const data = await listAdminItems(req.validatedQuery ?? req.query);
   res.status(200).json(data);
 }
 

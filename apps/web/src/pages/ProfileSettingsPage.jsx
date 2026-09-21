@@ -23,6 +23,7 @@ import { updateProfile } from '../lib/api/users.js';
 import { ApiError } from '../lib/api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { useToast } from '../components/shared/ToastProvider.jsx';
+import ForbiddenPage from './ForbiddenPage.jsx';
 
 const FIELD_CLASS =
   'mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200';
@@ -30,6 +31,9 @@ const FIELD_CLASS =
 export default function ProfileSettingsPage() {
   const { user, updateUser } = useAuth();
   const { push: pushToast } = useToast();
+
+  // ALL hooks must run on every render (Rules of Hooks) — the admin early
+  // return happens BELOW, after hook initialization.
   const [serverError, setServerError] = useState(null);
   const [saved, setSaved] = useState(false);
 
@@ -79,6 +83,13 @@ export default function ProfileSettingsPage() {
       });
     }
   }, [user, getValues, reset]);
+
+  // USER-only surface (product decision; the API 403s admins too). Direct
+  // URL access by an admin renders the standard forbidden state instead of
+  // a form that could never succeed. AFTER all hooks (Rules of Hooks).
+  if (user?.role === 'ADMIN') {
+    return <ForbiddenPage />;
+  }
 
   const onSubmit = async (values) => {
     setServerError(null);

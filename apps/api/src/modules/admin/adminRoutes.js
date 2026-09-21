@@ -13,12 +13,14 @@ import validate from '../../middleware/validate.js';
 import validateQuery from '../../middleware/validateQuery.js';
 import {
   adminBanSchema,
+  adminItemsQuerySchema,
   adminQueueQuerySchema,
   adminUsersQuerySchema,
   moderateItemSchema,
   reportResolveSchema,
 } from '@rewear/shared-schemas';
 import {
+  adminItems,
   ban,
   moderate,
   pendingQueue,
@@ -34,6 +36,10 @@ const router = Router();
 router.use(requireAuth, requireAdmin);
 
 router.get('/items/pending', validateQuery(adminQueueQuerySchema), pendingQueue);
+// Live-monitoring list (post-approval oversight) — BEFORE any /:id route
+// pattern concerns (it's a distinct literal path, same convention as
+// itemsRoutes' classify-before-:id).
+router.get('/items', validateQuery(adminItemsQuerySchema), adminItems);
 
 router.patch('/items/:id/moderate', validate(moderateItemSchema), moderate);
 

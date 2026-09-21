@@ -58,6 +58,45 @@ export async function listPendingItems(query) {
   };
 }
 
+/**
+ * GET /admin/items — the live-monitoring list (post-approval oversight).
+ * status=APPROVED (default) shows what is publicly visible RIGHT NOW — the
+ * surface an admin watches for listings that turn out to be spam/
+ * inappropriate after passing review; status=REMOVED shows the takedown
+ * trail. q searches the title (escaped, the established pattern). Paginated,
+ * never unbounded. NOTE: q-filter built via keep-alive plain object; the
+ * scalar status match avoids the sanitizeFilter object-operator trap.
+ */
+export async function listAdminItems(query) {
+  const page = Math.max(1, Number(query.page) || 1);
+  const pageSize = Math.min(PAGE_CEILING, Math.max(1, Number(query.pageSize) || 20));
+
+  const filter = { status: query.status === 'REMOVED' ? 'REMOVED' : 'APPROVED' };
+  if (query.q) {
+    filter.title = new RegExp(escapeRegExp(query.q), 'i');
+  }
+
+  const [items, total] = await Promise.all([
+    Item.find(filter)
+      .sort({ createdAt: -1 }) // newest first — the freshest live listings first
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .populate('ownerId', 'name email')
+      .lean(),
+    Item.countDocuments(filter),
+  ]);
+
+  return {
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    hasNextPage: page * pageSize < total,
+    hasPrevPage: page > 1,
+  };
+}
+
 /** Resolve an item by id or throw the §10 404 shape. NOTE: no `$ne` filter
  * here — sanitizeFilter defangs object-form operators on scalar paths into
  * CastErrors (the documented trap, `$in`/`$ne` variants); REMOVED items fall
@@ -74,39 +113,60 @@ async function audit(adminId, targetType, targetId, action, reason) {
 }
 
 /**
- * §5.8 moderate: { action: APPROVE|REJECT, reason? } → conditional status
- * update + audit row. Conditional update = the same race discipline as the
- * swap gate (§5.7): if the item left PENDING (e.g. moderated concurrently or
- * swapped between queue fetch and click), the match fails and the admin
- * gets 409 CONFLICT instead of a stale overwrite.
+ * §5.8 moderate: { action, reason? } → conditional status update + audit row.
+ * Transition table: APPROVE/REJECT are the PENDING-queue flow; REMOVE is the
+ * post-approval takedown (problem statement: "remove inappropriate or spam
+ * items") — it may strike a LIVE (APPROVED) listing. Conditional update =
+ * the same race discipline as the swap gate (§5.7): if the item left its
+ * expected status between queue fetch and click (moderated concurrently,
+ * swapped, owner-deleted), the match fails and the admin gets 409 CONFLICT
+ * instead of a stale overwrite.
  */
+const MODERATION_TRANSITIONS = Object.freeze({
+  APPROVE: { from: ['PENDING'], to: 'APPROVED' },
+  REJECT: { from: ['PENDING'], to: 'REJECTED' },
+  REMOVE: { from: ['PENDING', 'APPROVED'], to: 'REMOVED' },
+});
+
 export async function moderateItem(itemId, { action, reason }, viewer) {
-  const statusByAction = { APPROVE: 'APPROVED', REJECT: 'REJECTED' };
-  const nextStatus = statusByAction[action];
-  if (!nextStatus) {
+  const transition = MODERATION_TRANSITIONS[action];
+  if (!transition) {
     // Schema already enforces the enum; this is a defensive second gate.
     throw new AppError(400, 'VALIDATION', 'Unknown moderation action.');
+  }
+  // The shared schema requires a reason for REMOVE (audit trail); the
+  // defensive gate mirrors it here in case the schema ever changes.
+  if (action === 'REMOVE' && !(reason && reason.trim())) {
+    throw new AppError(400, 'VALIDATION', 'A reason is required when removing a live listing.');
   }
 
   const item = await getItemOr404(itemId);
 
-  // Transition guard: only PENDING items are moderatable (§5.8 queue flow).
-  if (item.status !== 'PENDING') {
+  // Transition guard: the action must be legal from the item's CURRENT
+  // status (e.g. REJECT on an already-APPROVED item stays a 409 — only
+  // REMOVE can act on live listings).
+  if (!transition.from.includes(item.status)) {
     throw new AppError(
       409,
       'INVALID_STATE',
-      `Item is already ${item.status}; only PENDING items can be moderated.`
+      `Item is ${item.status}; ${action} applies to ${transition.from.join('/')} items.`
     );
   }
 
-  // Conditional update: match ONLY the state we validated (race-safe, §5.7).
+  // Conditional update: match ONLY a status the action is legal from
+  // (race-safe, §5.7). One atomic step — a concurrent approve/remove/swap
+  // changes the status and our match fails. NOTE: the status match uses a
+  // PLAIN ARRAY value (implicit $in) — object-form `$in` on a scalar path is
+  // defanged by sanitizeFilter into a CastError (the documented Session 14
+  // live bug; plain-array is the codebase's established safe pattern).
+  const statusMatch = transition.from.length === 1 ? transition.from[0] : transition.from;
   const updated = await Item.findOneAndUpdate(
-    { _id: item._id, status: 'PENDING' },
-    { $set: { status: nextStatus, moderationReason: reason || null } },
+    { _id: item._id, status: statusMatch },
+    { $set: { status: transition.to, moderationReason: reason || null } },
     { new: true }
   );
   if (!updated) {
-    throw new AppError(409, 'CONFLICT', 'Item status changed; refresh the queue.');
+    throw new AppError(409, 'CONFLICT', 'Item status changed; refresh and try again.');
   }
 
   await audit(viewer.id, 'Item', item._id, action, reason);

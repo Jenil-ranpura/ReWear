@@ -19,6 +19,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import ProfileSettingsPage from '../src/pages/ProfileSettingsPage.jsx';
 import Layout from '../src/components/Layout.jsx';
+import DashboardPage from '../src/pages/DashboardPage.jsx';
 import { AuthProvider } from '../src/state/AuthContext.jsx';
 import ToastProvider from '../src/components/shared/ToastProvider.jsx';
 import { setAccessToken } from '../src/lib/api/client.js';
@@ -295,6 +296,87 @@ describe('ProfileSettingsPage — successful save', () => {
     fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
     expect(await screen.findByTestId('toast')).toHaveTextContent(/profile updated/i);
+  });
+});
+
+describe('ProfileSettingsPage — admin restriction (user-only feature)', () => {
+  const ADMIN_VIEWER = { ...VIEWER, role: 'ADMIN' };
+
+  function renderFor(viewer) {
+    fetchImpl = (u) => {
+      if (u.includes('/auth/refresh')) return jsonResponse(200, { accessToken: 't' });
+      if (u.includes('/auth/me')) return jsonResponse(200, { user: viewer });
+      return jsonResponse(404, { error: { code: 'X', message: 'no route' } });
+    };
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/dashboard/profile']}>
+          <AuthProvider>
+            <ToastProvider>
+              <Routes>
+                <Route path="/dashboard/profile" element={<ProfileSettingsPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+              </Routes>
+            </ToastProvider>
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+  }
+
+  it('an admin hitting the URL directly sees the forbidden state, not the form', async () => {
+    renderFor(ADMIN_VIEWER);
+
+    expect(await screen.findByText(/403 — not allowed/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/name/i)).toBeNull();
+  });
+
+  it('the navbar profile is NOT a link for admins (no settings entry point)', async () => {
+    fetchImpl = (u) => {
+      if (u.includes('/auth/refresh')) return jsonResponse(200, { accessToken: 't' });
+      if (u.includes('/auth/me')) return jsonResponse(200, { user: ADMIN_VIEWER });
+      return jsonResponse(404, { error: { code: 'X', message: 'no route' } });
+    };
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/items']}>
+          <AuthProvider>
+            <ToastProvider>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/items" element={<div>browse</div>} />
+                </Route>
+              </Routes>
+            </ToastProvider>
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // The name renders, but as static text — no profile-settings link.
+    expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ada lovelace — profile settings/i })).toBeNull();
+  });
+
+  it('the dashboard Edit profile link is hidden for admins', async () => {
+    renderFor(ADMIN_VIEWER);
+
+    fireEvent.click(screen.getByRole('link', { name: /dashboard/i }));
+    expect(await screen.findByText(/welcome back/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('edit-profile-link')).toBeNull();
+  });
+
+  it('still renders the form for regular users (restriction is admin-only)', async () => {
+    renderFor(VIEWER);
+
+    expect(await screen.findByDisplayValue('Ada Lovelace')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
   });
 });
 

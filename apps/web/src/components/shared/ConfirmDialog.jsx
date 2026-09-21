@@ -30,6 +30,13 @@ export default function ConfirmDialog({
   danger = false,
   busy = false,
   confirmDisabled = false,
+  /** Optional: widen the dialog for content-heavy bodies (item details). */
+  wide = false,
+  /**
+   * Optional: hide the cancel + confirm action row entirely (informational
+   * dialogs that close via Escape/backdrop/✕). No-op for confirm flows.
+   */
+  hideActions = false,
   onConfirm,
   onClose,
 }) {
@@ -112,38 +119,55 @@ export default function ConfirmDialog({
         aria-busy={busy || undefined}
         aria-labelledby="confirm-dialog-title"
         aria-describedby={message ? 'confirm-dialog-description' : undefined}
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+        className={`w-full rounded-xl bg-white p-6 shadow-xl ${wide ? 'max-w-2xl' : 'max-w-sm'}`}
       >
-        <h2 id="confirm-dialog-title" className="text-lg font-bold text-stone-900">
-          {title}
-        </h2>
+        <div className="flex items-start justify-between gap-3">
+          <h2 id="confirm-dialog-title" className="text-lg font-bold text-stone-900">
+            {title}
+          </h2>
+          {/* Informational dialogs have no action row — always offer a
+            pointer/AT-friendly close affordance. */}
+          {hideActions && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close dialog"
+              data-testid="dialog-close"
+              className="rounded-md p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          )}
+        </div>
         {message && (
           <p id="confirm-dialog-description" className="mt-2 text-sm text-stone-600">
             {message}
           </p>
         )}
         {children && <div className="mt-4">{children}</div>}
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={busy}
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-100 disabled:opacity-50"
-          >
-            {cancelLabel}
-          </button>
-          <button
-            ref={confirmRef}
-            type="button"
-            onClick={onConfirm}
-            disabled={busy || confirmDisabled}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
-              danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-700 hover:bg-brand-800'
-            }`}
-          >
-            {busy ? 'Working…' : confirmLabel}
-          </button>
-        </div>
+        {!hideActions && (
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={busy}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-100 disabled:opacity-50"
+            >
+              {cancelLabel}
+            </button>
+            <button
+              ref={confirmRef}
+              type="button"
+              onClick={onConfirm}
+              disabled={busy || confirmDisabled}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
+                danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-700 hover:bg-brand-800'
+              }`}
+            >
+              {busy ? 'Working…' : confirmLabel}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -43,6 +43,7 @@ export {
 export {
   moderateItemSchema,
   adminQueueQuerySchema,
+  adminItemsQuerySchema,
   adminUsersQuerySchema,
   adminBanSchema,
 } from './admin.js';

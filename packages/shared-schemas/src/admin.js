@@ -14,14 +14,46 @@ export { ADMIN_ACTIONS };
 
 /**
  * PATCH /admin/items/:id/moderate body (§5.8): action required, reason
- * optional (but encouraged for REJECT — the UI will nudge). Anything else is
- * rejected; status itself is never client-submitted, the action decides it.
+ * optional for APPROVE/REJECT (but encouraged for REJECT — the UI nudges).
+ * REMOVE (post-approval takedown of live items) REQUIRES a reason: removing
+ * an already-public listing is consequential — the owner deserves an
+ * explanation and the audit trail must carry one. Status itself is never
+ * client-submitted; the action decides it.
  */
 export const moderateItemSchema = object({
   action: string()
-    .oneOf(ADMIN_ACTIONS, 'Action must be one of: APPROVE, REJECT')
+    .oneOf(ADMIN_ACTIONS, 'Action must be one of: APPROVE, REJECT, REMOVE')
     .required('Action is required'),
-  reason: string().trim().max(500, 'Reason must be at most 500 characters').notRequired(),
+  reason: string()
+    .trim()
+    .max(500, 'Reason must be at most 500 characters')
+    .when('action', {
+      is: 'REMOVE',
+      then: (s) => s.required('A reason is required when removing a live listing'),
+      otherwise: (s) => s.notRequired(),
+    }),
+});
+
+/**
+ * GET /admin/items query — the live-monitoring list (post-approval
+ * oversight). status defaults to APPROVED (what's public RIGHT NOW); REMOVED
+ * shows the takedown trail; q searches title (escaped server-side). Bounded
+ * pagination like every list.
+ */
+export const adminItemsQuerySchema = object({
+  status: string().oneOf(['APPROVED', 'REMOVED'], 'Unknown status filter').default('APPROVED'),
+  q: string().trim().max(120).default(''),
+  page: number()
+    .transform((v, orig) => (orig === '' || orig == null ? undefined : v))
+    .integer()
+    .min(1)
+    .default(1),
+  pageSize: number()
+    .transform((v, orig) => (orig === '' || orig == null ? undefined : v))
+    .integer()
+    .min(1)
+    .max(60)
+    .default(20),
 });
 
 /**

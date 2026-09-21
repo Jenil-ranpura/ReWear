@@ -73,8 +73,14 @@ export async function listMyPointsHistory(query, viewer) {
 const BCRYPT_COST = 10;
 
 /**
- * PATCH /users/me (§10, profile self-service). Viewers may edit ONLY their own
- * profile — the viewer id comes from the token, never the request (§15 IDOR).
+ * PATCH /users/me (§10, profile self-service). A USER-only feature: admins
+ * are platform moderators, not marketplace participants — they don't list,
+ * swap, or need contact details on their account, so there is nothing to
+ * self-serve (product decision). Enforced HERE, not just in the UI — an
+ * admin calling the endpoint directly gets 403 FORBIDDEN.
+ *
+ * Regular users may edit ONLY their own profile — the viewer id comes from
+ * the token, never the request (§15 IDOR).
  *
  * Edits: name, phone (E.164-normalized, '' clears), and an OPTIONAL password
  * change gated on re-authentication (currentPassword verified against the
@@ -90,6 +96,11 @@ const BCRYPT_COST = 10;
  * refreshTokenHash) so callers can refresh their AuthContext user directly.
  */
 export async function updateMyProfile(payload, viewer) {
+  // USER-only (product decision): admins have no self-service profile.
+  if (viewer.role === 'ADMIN') {
+    throw new AppError(403, 'FORBIDDEN', 'Admin accounts cannot edit a user profile.');
+  }
+
   // Whitelist first — unknown/derived fields (role, pointsBalance, email,
   // isBanned, sessionExpiresAt, …) are structurally unreachable.
   const data = {};

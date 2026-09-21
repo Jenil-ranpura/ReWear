@@ -11,6 +11,14 @@ export function pendingItems(query) {
   return apiFetch('/admin/items/pending', { query });
 }
 
+/**
+ * GET /admin/items?status=APPROVED|REMOVED — the live-monitoring list
+ * (post-approval oversight). q searches titles within the selected status.
+ */
+export function listItems(query) {
+  return apiFetch('/admin/items', { query });
+}
+
 /** action: APPROVE | REJECT; reason optional (encouraged for REJECT, §5.8). */
 export function moderate(itemId, action, reason) {
   return apiFetch(`/admin/items/${itemId}/moderate`, {

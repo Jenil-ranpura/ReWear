@@ -14,6 +14,7 @@ import MyItemsPage from './pages/MyItemsPage.jsx';
 import MySwapsPage from './pages/MySwapsPage.jsx';
 import PointsHistoryPage from './pages/PointsHistoryPage.jsx';
 import AdminQueuePage from './pages/AdminQueuePage.jsx';
+import AdminLiveItemsPage from './pages/AdminLiveItemsPage.jsx';
 import AdminReportsPage from './pages/AdminReportsPage.jsx';
 import AdminUserDetailPage from './pages/AdminUserDetailPage.jsx';
 import AdminUsersPage from './pages/AdminUsersPage.jsx';
@@ -101,6 +102,14 @@ export default function App() {
           element={
             <ProtectedRoute requireAdmin>
               <AdminQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/live"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminLiveItemsPage />
             </ProtectedRoute>
           }
         />
