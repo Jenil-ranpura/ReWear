@@ -282,6 +282,58 @@ describe('Layout auth awareness (P3-T7)', () => {
     expect(screen.queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
   });
 
+  // Product decision: admins are MODERATORS, not marketplace participants —
+  // the nav shows only Browse + Admin for them (points chip, List-an-Item
+  // CTA, and the Dashboard link are participant affordances).
+  it('hides the participant controls for admins: no points chip, no List-an-Item, no Dashboard', async () => {
+    restoreSession.mockResolvedValue({ ...user, role: 'ADMIN', pointsBalance: 120 });
+
+    renderWithProviders(<Layout />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeInTheDocument();
+    });
+    // Points chip absent even though the balance exists (role-scoped, not
+    // data-scoped — the admin fixture deliberately keeps pointsBalance).
+    expect(screen.queryByText('120 pts')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /list an item/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Dashboard/ })).not.toBeInTheDocument();
+    // The moderator affordances remain.
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('link', { name: /^Browse$/ })).toHaveAttribute('href', '/items');
+    expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
+  });
+
+  it('still shows the participant controls for regular users', async () => {
+    restoreSession.mockResolvedValue(user); // role: USER, 120 pts
+
+    renderWithProviders(<Layout />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeInTheDocument();
+    });
+    expect(screen.getByText('120 pts')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /list an item/i })).toHaveAttribute(
+      'href',
+      '/items/new'
+    );
+    expect(screen.getByRole('link', { name: /^Dashboard/ })).toHaveAttribute('href', '/dashboard');
+  });
+
+  it('keeps the List-an-Item CTA for guests (signed-out visitors can still be funneled to listing)', async () => {
+    restoreSession.mockRejectedValue(new Error('anon'));
+
+    renderWithProviders(<Layout />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
+    });
+    expect(screen.getByRole('link', { name: /list an item/i })).toHaveAttribute(
+      'href',
+      '/items/new'
+    );
+  });
+
   it('shows the Dashboard link with the ambient NEW-swaps badge when unseen pending requests exist', async () => {
     localStorage.clear();
     restoreSession.mockResolvedValue(user);

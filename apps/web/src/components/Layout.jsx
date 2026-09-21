@@ -11,6 +11,11 @@ import SwapArrivalWatcher from './swaps/SwapArrivalWatcher.jsx';
  * when signed out; the user's name, points chip, and Logout when signed in.
  * Avatar dropdown arrives with later phases.
  *
+ * Admins are MODERATORS, not marketplace participants (product decision,
+ * same principle as the static-text profile link): the nav hides the
+ * Dashboard link, the points chip, and the List-an-Item CTA for them —
+ * only Browse + Admin remain.
+ *
  * Session 14 (cont.): an authed-only DASHBOARD link now exists (it was
  * missing — the only nav paths in were Browse/brand), carrying the ambient
  * NEW-swap-requests badge so owners spot pending requests from ANY page
@@ -65,8 +70,12 @@ export default function Layout() {
             >
               <NavLink to="/items" className={navLinkClass}>
                 Browse
-              </NavLink>
-              {status === 'authenticated' && user && (
+              </NavLink>{' '}
+              {/* Dashboard is a marketplace-participant surface (profile, my
+                items, swaps, points) — admins moderate, they don't
+                participate (same product decision as the profile link).
+                The ambient NEW-swaps badge lives here for USERS only. */}
+              {status === 'authenticated' && user && user.role !== 'ADMIN' && (
                 <NavLink to="/dashboard" className={navLinkClass}>
                   Dashboard
                   {/* Ambient NEW badge — visible from any page (0 → nothing). */}
@@ -86,16 +95,20 @@ export default function Layout() {
                   Admin
                 </NavLink>
               )}
-              <Link
-                to="/items/new"
-                className="rounded-md bg-brand-700 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-800"
-              >
-                List an Item
-              </Link>
-
+              {/* Admins don't list items — participant CTA only. */}
+              {user?.role !== 'ADMIN' && (
+                <Link
+                  to="/items/new"
+                  className="rounded-md bg-brand-700 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+                >
+                  List an Item
+                </Link>
+              )}
               {status === 'authenticated' && user ? (
                 <div className="ml-2 flex items-center gap-2">
-                  <PointsBalance balance={user.pointsBalance} />
+                  {/* Points are a participant currency — the chip would be a
+                    confusing “25 pts” on a moderator session. */}
+                  {user.role !== 'ADMIN' && <PointsBalance balance={user.pointsBalance} />}
                   {/* Clickable profile → settings (user request: edit name /
                     phone / password from the profile). USER-ONLY (product
                     decision): admins don't self-serve a profile, so the
