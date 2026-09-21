@@ -8,15 +8,16 @@
 
 import bcrypt from 'bcryptjs';
 
-import { User } from '../../models/index.js';
+import { User, PointsTransaction } from '../../models/index.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { withTransactionRetry } from '../../lib/withTransaction.js';
 import {
   generateRefreshToken,
   hashRefreshToken,
   sessionDeadline,
   signAccessToken,
 } from './tokens.js';
-import { normalizePhone } from '@rewear/shared-schemas';
+import { normalizePhone, SIGNUP_POINTS_GRANT } from '@rewear/shared-schemas';
 
 const BCRYPT_COST = 10; // §11: cost factor 10–12
 
@@ -30,16 +31,43 @@ export async function registerUser({ name, email, password, phone }) {
   // Fixed session window starts NOW (§11, user request).
   const sessionExpiresAt = sessionDeadline();
 
-  const user = await User.create({
-    name,
-    email,
-    passwordHash,
-    // Contact reveal: optional signup phone. Schema-validated (real-phone
-    // rules); stored E.164-normalized. Never rides public projections — the
-    // item-detail owner query selects an explicit field list without it.
-    ...(phone ? { phone: normalizePhone(phone) } : {}),
-    refreshTokenHash: hashRefreshToken(refreshToken),
-    sessionExpiresAt,
+  // The 25-point signup grant is LEDGER-BACKED (user decision, final):
+  // user doc + the origin EARNED transaction commit ATOMICALLY, so the
+  // §9.3 invariant (pointsBalance === Σ pointstransactions) holds for a
+  // fresh account from the first millisecond — no "25 with an empty
+  // ledger" window, no silent loss if anything recomputes the cache.
+  // A registration failure rolls BOTH writes back together.
+  const user = await withTransactionRetry(async (session) => {
+    const doc = await User.create(
+      [
+        {
+          name,
+          email,
+          passwordHash,
+          // Contact reveal: optional signup phone. Schema-validated (real-phone
+          // rules); stored E.164-normalized. Never rides public projections — the
+          // item-detail owner query selects an explicit field list without it.
+          ...(phone ? { phone: normalizePhone(phone) } : {}),
+          refreshTokenHash: hashRefreshToken(refreshToken),
+          sessionExpiresAt,
+          pointsBalance: SIGNUP_POINTS_GRANT, // explicit — mirrors the EARNED doc below
+        },
+      ],
+      { session }
+    );
+
+    await PointsTransaction.create(
+      [
+        {
+          userId: doc[0]._id,
+          amount: SIGNUP_POINTS_GRANT,
+          type: 'EARNED', // signup grant — the ledger's origin entry for this account
+        },
+      ],
+      { session }
+    );
+
+    return doc[0];
   });
 
   return {

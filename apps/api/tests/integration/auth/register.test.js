@@ -8,9 +8,11 @@ import crypto from 'node:crypto';
 import request from 'supertest';
 
 import app from '../../../src/app.js';
-import { User } from '../../../src/models/index.js';
+import { User, PointsTransaction } from '../../../src/models/index.js';
 import { startTestDb, stopTestDb } from '../../helpers/testDb.js';
+import { reconcileUserPoints } from '../../../src/lib/reconcilePoints.js';
 import { verifyAccessToken } from '../../../src/modules/auth/tokens.js';
+import { SIGNUP_POINTS_GRANT } from '@rewear/shared-schemas';
 
 const ROUTE = '/api/v1/auth/register';
 
@@ -56,11 +58,70 @@ describe('POST /api/v1/auth/register', () => {
     expect(refreshCookie).toContain('SameSite=Strict');
     expect(JSON.stringify(res.body)).not.toContain('refreshToken');
 
-    // Persisted state: lowercased email, default points balance (§5.1 —
-    // signup grants 25 points, user decision recorded in AI-CONTEXT.md).
+    // Persisted state: lowercased email, signup grant (§5.1 — 25 points,
+    // user decision recorded in AI-CONTEXT.md).
     const dbUser = await User.findOne({ email: 'ada@example.com' });
     expect(dbUser).not.toBeNull();
-    expect(dbUser.pointsBalance).toBe(25);
+    expect(dbUser.pointsBalance).toBe(SIGNUP_POINTS_GRANT);
+  });
+
+  it('writes the signup grant as a LEDGER doc atomically (§9.3: cache = Σ ledger)', async () => {
+    const res = await request(app).post(ROUTE).send({
+      name: 'Grace Hopper',
+      email: 'grace@example.com',
+      password: 'sup3rSecret!',
+    });
+    expect(res.status).toBe(201);
+
+    const dbUser = await User.findOne({ email: 'grace@example.com' });
+
+    // The ledger carries the ORIGIN entry for the grant — the balance has a
+    // traceable history from the first millisecond.
+    const grantDocs = await PointsTransaction.find({ userId: dbUser._id }).lean();
+    expect(grantDocs).toHaveLength(1);
+    expect(grantDocs[0].type).toBe('EARNED');
+    expect(grantDocs[0].amount).toBe(SIGNUP_POINTS_GRANT);
+    expect(grantDocs[0].relatedSwapRequestId).toBeNull();
+
+    // Append-only discipline: createdAt set, no updatedAt (model config).
+    expect(grantDocs[0].createdAt).toBeInstanceOf(Date);
+    expect(grantDocs[0].updatedAt).toBeUndefined();
+
+    // The standing §9.3 invariant holds for a brand-new account.
+    const report = await reconcileUserPoints(dbUser._id);
+    expect(report.consistent).toBe(true);
+    expect(report.cached).toBe(SIGNUP_POINTS_GRANT);
+    expect(report.ledger).toBe(SIGNUP_POINTS_GRANT);
+  });
+
+  it('rolls back BOTH user and ledger doc if the transaction aborts (atomicity)', async () => {
+    // Email collides AFTER the EARNED insert? No — the user create itself
+    // fails on E11000 inside the transaction, so neither document may exist.
+    // First registration succeeds:
+    const first = await request(app).post(ROUTE).send({
+      name: 'Dup Test',
+      email: 'dup@example.com',
+      password: 'sup3rSecret!',
+    });
+    expect(first.status).toBe(201);
+
+    // Second registration with the same email must 409 and leave NO ledger
+    // docs beyond the first account's grant.
+    const second = await request(app).post(ROUTE).send({
+      name: 'Dup Test Again',
+      email: 'dup@example.com',
+      password: 'sup3rSecret!',
+    });
+    expect(second.status).toBe(409);
+
+    const users = await User.find({ email: 'dup@example.com' });
+    expect(users).toHaveLength(1);
+    // The aborted registration left no grant of its own: the surviving
+    // account's ledger is exactly its one signup grant — no orphan +25.
+    const dupDocs = await PointsTransaction.find({ userId: users[0]._id }).lean();
+    expect(dupDocs).toHaveLength(1);
+    expect(dupDocs[0].amount).toBe(SIGNUP_POINTS_GRANT);
+    expect(dupDocs[0].type).toBe('EARNED');
   });
 
   it('rejects a short password with 400 VALIDATION (§11: min 8, server-side)', async () => {
@@ -98,13 +159,18 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   it('rejects injection-shaped input (§17 security row): object where a string belongs', async () => {
+    // Relative assertion (sanitizeFilter blocks operator objects): the
+    // request must create NOTHING, whatever the shape — before/after counts
+    // must match. The suite shares one in-memory DB, so never assert an
+    // absolute count here.
+    const usersBefore = await User.countDocuments({});
     const res = await request(app)
       .post(ROUTE)
       .send({ name: { $gt: '' }, email: { $gt: '' }, password: { $gt: '' } });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION');
-    expect(await User.countDocuments({})).toBeLessThan(3); // nothing new created
+    expect(await User.countDocuments({})).toBe(usersBefore);
   });
 
   it('strips unknown fields from the payload (role escalation attempt)', async () => {

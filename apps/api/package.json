@@ -16,6 +16,7 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --passWithNoTests",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --onlyChanged --passWithNoTests",
     "seed": "node --env-file-if-exists=.env seed/seed.js",
+    "backfill:signup-grant": "node --env-file-if-exists=.env scripts/backfill-signup-grant.js",
     "verify:db": "node --env-file-if-exists=.env scripts/verify-db.js",
     "verify:tx": "node --env-file-if-exists=.env scripts/verify-transactions.js"
   },

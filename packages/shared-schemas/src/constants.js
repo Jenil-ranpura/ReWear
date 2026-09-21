@@ -44,6 +44,15 @@ export const USER_ROLE = Object.freeze(['USER', 'ADMIN']);
 
 export const POINTS_TX_TYPE = Object.freeze(['EARNED', 'SPENT', 'ADJUSTED']);
 
+/**
+ * Signup grant (user decision, final): every new account starts with 25
+ * points. The grant is LEDGER-BACKED — registration writes an `EARNED`
+ * transaction in the same transaction as the user doc, so the cache=Σledger
+ * invariant (§9.3) holds from the very first millisecond. User model's
+ * pointsBalance default mirrors this number (apps/api/src/models/User.js).
+ */
+export const SIGNUP_POINTS_GRANT = 25;
+
 // --- Admin moderation (§5.8/§10 PATCH /admin/items/:id/moderate) ---
 // REMOVE = post-approval takedown (problem statement: "remove inappropriate
 // or spam items"): catches listings that passed review but turn out to be
